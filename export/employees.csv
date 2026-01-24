@@ -1,0 +1,3 @@
+employeeID,title,F_name,L_name,Address,Birthdate,NID_num,Phone_num,Email,start_working_date,Salary,employeeType,bankName,bankAccountID,PositionID,departmentID,bus_id,Status
+1,1,1,ewrt,432,234,23423423,432432423,34234@rfew.com,Sun Oct 10 2010 00:00:00 GMT+0700 (เวลาอินโดจีน),1212,1,142,2452,1,1,1,active
+4,Mr.,324,2342,234,2024-11-05T17:00:00.000Z,3243243242342,4324324233,wrewr@ewrfew.com,Wed Nov 06 2024 00:00:00 GMT+0700 (เวลาอินโดจีน),3232,Part-time,323,432432423423432,1,2,1,not active

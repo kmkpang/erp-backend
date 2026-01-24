@@ -1,0 +1,11 @@
+[
+  {
+    "userID": 2,
+    "userF_name": "test",
+    "userL_name": "tersedsr",
+    "userPhone": "0212152",
+    "userEmail": "test@gmail.com",
+    "userPassword": "123456",
+    "RoleID": 1
+  }
+]

@@ -1,0 +1,4 @@
+bus_id,bus_name,bus_address,bus_website,bus_tax,bus_tel,bus_logo,bank_id
+1,GGG222,wew,dfg,44,55,https://res.cloudinary.com/dse3aqfrm/image/upload/v1709890183/i3eoehf9prldpf58fvfn.jpg,1
+9,test1,test,www.www,55213,02132,https://res.cloudinary.com/dse3aqfrm/image/upload/v1709887200/wz9myb51vv6yyurmjx07.jpg,9
+10,test2,test,www.www,55213,02132,https://res.cloudinary.com/dse3aqfrm/image/upload/v1709887241/b18hzfc7g5npxcerkr7s.jpg,10
