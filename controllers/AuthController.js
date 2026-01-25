@@ -70,6 +70,16 @@ class AuthController {
         const user = users[0];
         const storedPassword = user.userPassword;
 
+        // ตรวจสอบว่ามี role หรือไม่
+        if (!user.role) {
+          return ResponseManager.ErrorResponse(
+            req,
+            res,
+            500,
+            "User role not found. Please contact administrator."
+          );
+        }
+
         // const isMatch = await bcrypt.compare(userPassword, storedPassword);
 
         // if (isMatch) {
@@ -111,6 +121,7 @@ class AuthController {
             token,
             userID: user.userID,
             userF_name: user.userF_name,
+            userL_name: user.userL_name,
             userEmail: user.userEmail,
             RoleID: user.RoleID,
             RoleName: user.role.RoleName,

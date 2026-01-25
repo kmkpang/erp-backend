@@ -14,7 +14,7 @@ const Business = sequelize.define(
       allowNull: false,
     },
     bus_address: {
-      type: DataTypes.STRING(100),
+      type: DataTypes.STRING(255),
       allowNull: false,
     },
     bus_website: {
@@ -345,6 +345,22 @@ const Billing = sequelize.define(
       type: DataTypes.INTEGER,
       allowNull: false,
     },
+    pay_bank: {
+      type: DataTypes.STRING(150),
+      allowNull: true,
+    },
+    pay_number: {
+      type: DataTypes.STRING(50),
+      allowNull: true,
+    },
+    pay_branch: {
+      type: DataTypes.STRING(100),
+      allowNull: true,
+    },
+    pay_date: {
+      type: DataTypes.STRING(40),
+      allowNull: true,
+    },
     deleted_at: {
       type: DataTypes.STRING(100),
       allowNull: true,
@@ -416,6 +432,16 @@ const Company_person = sequelize.define(
     timestamps: false,
   }
 );
+
+// Associations
+Billing.belongsTo(Quotation_sale, { foreignKey: "sale_id" });
+Quotation_sale.hasMany(Billing, { foreignKey: "sale_id" });
+
+Billing.belongsTo(Invoice, { foreignKey: "invoice_id" });
+Invoice.hasOne(Billing, { foreignKey: "invoice_id" });
+
+Billing.belongsTo(TaxInvoice, { foreignKey: "tax_invoice_id" });
+TaxInvoice.hasOne(Billing, { foreignKey: "tax_invoice_id" });
 
 module.exports = {
   Business,

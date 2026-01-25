@@ -1,0 +1,16 @@
+# Exported from Render on 2026-01-24T04:08:26Z
+version: "1"
+projects:
+- name: My project
+  environments:
+  - name: Production
+    databases:
+    - name: erp-project
+      databaseName: erp_project
+      user: erp_project_user
+      plan: free
+      region: singapore
+      ipAllowList:
+      - source: 0.0.0.0/0
+        description: everywhere
+      postgresMajorVersion: "18"

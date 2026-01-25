@@ -61,11 +61,28 @@ class QuotationSaleController {
 
       const { bus_id } = req.userData;
 
-      const customer = await Customer.findAll({
+      const customers = await Customer.findAll({
         where: { bus_id: bus_id },
+        raw: true,
       });
 
-      return ResponseManager.SuccessResponse(req, res, 200, customer);
+      const companyPersons = await Company_person.findAll({
+        where: { bus_id: bus_id, company_person_status: 'active' },
+        raw: true
+      });
+
+      const customersWithDetails = customers.map(customer => {
+        const contactPerson = companyPersons.find(cp => cp.company_person_customer === customer.cus_id);
+        return {
+          ...customer,
+          cusPurchasePhone: contactPerson ? contactPerson.company_person_tel : '',
+          cusPurchaseEmail: contactPerson ? contactPerson.company_person_email : '',
+          // Remark is not stored in DB, returning empty
+          cusPurchaseRemark: ''
+        };
+      });
+
+      return ResponseManager.SuccessResponse(req, res, 200, customersWithDetails);
     } catch (err) {
       return ResponseManager.CatchResponse(req, res, err.message);
     }
@@ -142,6 +159,20 @@ class QuotationSaleController {
         Status: "active",
       });
 
+      if (insert_cate) {
+        // Create Company_person to store contact details
+        await Company_person.create({
+          company_person_name: req.body.cus_purchase || "-",
+          company_person_tel: req.body.cus_purchase_phone || "-",
+          company_person_email: req.body.cus_purchase_email || "-",
+          company_person_address: req.body.cus_address || "-", // Use company address as required field
+          company_person_customer: insert_cate.cus_id,
+          company_person_status: "active",
+          bus_id: bus_id,
+          Status: "active",
+        });
+      }
+
       return ResponseManager.SuccessResponse(req, res, 200, insert_cate);
     } catch (err) {
       return ResponseManager.CatchResponse(req, res, err.message);
@@ -198,6 +229,7 @@ class QuotationSaleController {
   }
   static async editCustomer(req, res) {
     try {
+      // const { bus_id } = req.userData; // Removed because it causes error if userData is undefined
       const editemp = await Customer.findOne({
         where: {
           cus_id: req.params.id,
@@ -268,6 +300,41 @@ class QuotationSaleController {
             },
           }
         );
+
+        // Update or Create Company_person
+        const existingPerson = await Company_person.findOne({
+          where: {
+            company_person_customer: req.params.id,
+          },
+        });
+
+        if (existingPerson) {
+          await Company_person.update(
+            {
+              company_person_name: req.body.cus_purchase || "-",
+              company_person_tel: req.body.cus_purchase_phone || "-",
+              company_person_email: req.body.cus_purchase_email || "-",
+              company_person_address: req.body.cus_address || "-",
+            },
+            {
+              where: {
+                company_person_customer: req.params.id,
+              },
+            }
+          );
+        } else {
+          await Company_person.create({
+            company_person_name: req.body.cus_purchase || "-",
+            company_person_tel: req.body.cus_purchase_phone || "-",
+            company_person_email: req.body.cus_purchase_email || "-",
+            company_person_address: req.body.cus_address || "-",
+            company_person_customer: req.params.id,
+            company_person_status: "active",
+            bus_id: editemp.bus_id, // Use existing bus_id from database
+            Status: "active",
+          });
+        }
+
         return ResponseManager.SuccessResponse(
           req,
           res,
@@ -1785,6 +1852,10 @@ from quotation_sale_details
           billing_date: sale.billing_date,
           billing_status: sale.billing_status,
           payments: sale.payments,
+          pay_bank: sale.pay_bank,
+          pay_number: sale.pay_number,
+          pay_branch: sale.pay_branch,
+          pay_date: sale.pay_date,
           remark: sale.billings_remark,
           vatType: sale.vatType,
           deleted_at: sale.billings_deleted_at,
@@ -1992,15 +2063,31 @@ from quotation_sale_details
       // );
       await sequelize.query(`
         UPDATE billings
-        SET billing_date = '${req.body.billing_date}',
-            payments = '${req.body.payments}',
-            remark = '${req.body.remark}'
+        SET billing_date = :billing_date,
+            payments = :payments,
+            remark = :remark,
+            pay_bank = :pay_bank,
+            pay_number = :pay_number,
+            pay_branch = :pay_branch,
+            pay_date = :pay_date
         FROM invoices
         LEFT JOIN quotation_sales ON quotation_sales.sale_id = invoices.sale_id
-        WHERE billings.billing_id = '${req.params.id}'
+        WHERE billings.billing_id = :id
           AND invoices.invoice_id = billings.invoice_id
-          AND quotation_sales.bus_id = '${req.userData.bus_id}'
-      `);
+          AND quotation_sales.bus_id = :bus_id
+      `, {
+        replacements: {
+          billing_date: req.body.billing_date,
+          payments: req.body.payments,
+          remark: req.body.remark,
+          pay_bank: req.body.pay_bank || "",
+          pay_number: req.body.pay_number || "",
+          pay_branch: req.body.pay_branch || "",
+          pay_date: req.body.pay_date || "",
+          id: req.params.id,
+          bus_id: req.userData.bus_id
+        }
+      });
 
       return ResponseManager.SuccessResponse(req, res, 200, "Receipt Saved");
     } catch (err) {
@@ -2782,6 +2869,193 @@ ORDER BY
     } catch (err) {
       // ส่งข้อผิดพลาดหากเกิดปัญหา
       console.error("Error in GetSaleReportByProductType:", err);
+      return ResponseManager.CatchResponse(req, res, err.message);
+    }
+  }
+
+  // ✅ Get latest billing number for auto-generation
+  static async checkLatestBilling(req, res) {
+    try {
+      const tokenData = await TokenManager.update_token(req);
+      if (!tokenData) {
+        return await ResponseManager.ErrorResponse(
+          req,
+          res,
+          401,
+          "Unauthorized: Invalid token data"
+        );
+      }
+
+      const { bus_id } = req.userData;
+
+      const latestBilling = await Billing.findOne({
+        where: { deleted_at: null },
+        include: [
+          {
+            model: Quotation_sale,
+            where: { bus_id: bus_id },
+            attributes: [],
+          },
+        ],
+        order: [["billing_id", "DESC"]],
+      });
+
+      if (!latestBilling) {
+        return ResponseManager.SuccessResponse(req, res, 200, null);
+      }
+
+      return ResponseManager.SuccessResponse(req, res, 200, latestBilling);
+    } catch (err) {
+      return ResponseManager.CatchResponse(req, res, err.message);
+    }
+  }
+
+  // ✅ Add Direct Billing (creates Quotation, Invoice, TaxInvoice, and Billing in one transaction)
+  static async addDirectBilling(req, res) {
+    const transaction = await sequelize.transaction();
+
+    try {
+      const tokenData = await TokenManager.update_token(req);
+      if (!tokenData) {
+        await transaction.rollback();
+        return await ResponseManager.ErrorResponse(
+          req,
+          res,
+          401,
+          "Unauthorized: Invalid token data"
+        );
+      }
+
+      const { bus_id } = req.userData;
+
+      // Validate customer exists
+      const existCustomer = await Customer.findOne({
+        where: {
+          cus_id: req.body.cus_id,
+          bus_id: bus_id,
+        },
+      });
+
+      if (!existCustomer) {
+        await transaction.rollback();
+        return ResponseManager.ErrorResponse(
+          req,
+          res,
+          400,
+          "No Customer found"
+        );
+      }
+
+      // Validate billing number doesn't exist for THIS business
+      const existingBilling = await Billing.findOne({
+        where: {
+          billing_number: req.body.billing_number,
+          deleted_at: null,
+        },
+        include: [{
+          model: Quotation_sale,
+          where: { bus_id: bus_id },
+          attributes: ['bus_id'],
+        }]
+      });
+
+      if (existingBilling) {
+        await transaction.rollback();
+        return ResponseManager.ErrorResponse(
+          req,
+          res,
+          400,
+          "Billing number already exists"
+        );
+      }
+
+      // STEP 1: Create Quotation (auto-generated)
+      const quotationNumber = `QT-AUTO-${req.body.billing_number}`;
+      const insertQuotation = await Quotation_sale.create(
+        {
+          sale_number: quotationNumber,
+          sale_date: req.body.billing_date,
+          credit_date_number: "0",
+          credit_expired_date: req.body.billing_date,
+          sale_totalprice: req.body.sale_totalprice,
+          bus_id: bus_id,
+          cus_id: req.body.cus_id,
+          employeeID: req.body.employeeID,
+          status: "Active",
+          remark: req.body.remark || "",
+          remarkInfernal: "Auto-generated from direct billing",
+          discount_quotation: req.body.total_discount || "0",
+          vatType: req.body.vatType || "VATexcluding",
+        },
+        { transaction }
+      );
+
+      // STEP 2: Create Quotation Details
+      const products = req.body.products;
+      for (let i = 0; i < products.length; i++) {
+        products[i].sale_id = insertQuotation.sale_id;
+      }
+      await Quotation_sale_detail.bulkCreate(products, { transaction });
+
+      // STEP 3: Create Invoice (auto-generated)
+      const invoiceNumber = `IV-AUTO-${req.body.billing_number}`;
+      const insertInvoice = await Invoice.create(
+        {
+          invoice_number: invoiceNumber,
+          invoice_date: req.body.billing_date,
+          invoice_status: "Issue a receipt",
+          remark: req.body.remark || "",
+          sale_id: insertQuotation.sale_id,
+        },
+        { transaction }
+      );
+
+      // STEP 4: Create Tax Invoice (auto-generated)
+      const taxInvoiceNumber = `TX-AUTO-${req.body.billing_number}`;
+      const insertTaxInvoice = await TaxInvoice.create(
+        {
+          tax_invoice_number: taxInvoiceNumber,
+          tax_invoice_date: req.body.billing_date,
+          tax_invoice_status: "Complete",
+          tax_invoice_remark: req.body.remark || "",
+          invoice_id: insertInvoice.invoice_id,
+          sale_id: insertQuotation.sale_id,
+        },
+        { transaction }
+      );
+
+      // STEP 5: Create Billing
+      const insertBilling = await Billing.create(
+        {
+          billing_number: req.body.billing_number,
+          billing_date: req.body.billing_date,
+          billing_status: "Complete",
+          payments: req.body.payments,
+          remark: req.body.remark || "",
+          invoice_id: insertInvoice.invoice_id,
+          tax_invoice_id: insertTaxInvoice.tax_invoice_id,
+          sale_id: insertQuotation.sale_id,
+          pay_bank: req.body.pay_bank || "",
+          pay_number: req.body.pay_number || "",
+          pay_branch: req.body.pay_branch || "",
+          pay_date: req.body.pay_date || "",
+        },
+        { transaction }
+      );
+
+      // Commit transaction
+      await transaction.commit();
+
+      return ResponseManager.SuccessResponse(req, res, 200, {
+        billing_id: insertBilling.billing_id,
+        billing_number: insertBilling.billing_number,
+        quotation_id: insertQuotation.sale_id,
+        invoice_id: insertInvoice.invoice_id,
+        tax_invoice_id: insertTaxInvoice.tax_invoice_id,
+      });
+    } catch (err) {
+      await transaction.rollback();
+      console.error("Error in addDirectBilling:", err);
       return ResponseManager.CatchResponse(req, res, err.message);
     }
   }

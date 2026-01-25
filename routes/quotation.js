@@ -188,4 +188,18 @@ Route.post(
   upload.single("file"),
   QuotationSaleController.AddExpense_img
 );
+
+// ✅ New routes for direct billing creation
+Route.post(
+  RouteName + "/addDirectBilling",
+  verifyTokenWithbus_id,
+  QuotationSaleController.addDirectBilling
+);
+
+Route.get(
+  RouteName + "/checkLatestBilling",
+  verifyTokenWithbus_id,
+  QuotationSaleController.checkLatestBilling
+);
+
 module.exports = Route;

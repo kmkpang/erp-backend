@@ -5,7 +5,20 @@ const app = express();
 var bodyParser = require("body-parser");
 
 // Sync Sequelize models with the database
-sequelize.sync();
+sequelize.sync().then(async () => {
+    try {
+        await sequelize.query(`
+      ALTER TABLE billings ADD COLUMN IF NOT EXISTS pay_bank VARCHAR(150);
+      ALTER TABLE billings ADD COLUMN IF NOT EXISTS pay_number VARCHAR(50);
+      ALTER TABLE billings ADD COLUMN IF NOT EXISTS pay_branch VARCHAR(100);
+      ALTER TABLE billings ADD COLUMN IF NOT EXISTS pay_date VARCHAR(40);
+      ALTER TABLE businesses ALTER COLUMN bus_address TYPE VARCHAR(255);
+    `);
+        console.log("Database columns check/update completed.");
+    } catch (err) {
+        console.error("Migration error:", err.message);
+    }
+});
 
 const authRoute = require("./routes/Auth");
 const productRoute = require("./routes/Product");
