@@ -108,6 +108,7 @@ class QuotationSaleController {
         where: {
           cus_name: req.body.cus_name,
           bus_id: bus_id,
+          Status: "active",
         },
       });
       if (addCustomer) {
@@ -123,6 +124,7 @@ class QuotationSaleController {
         where: {
           cus_tel: req.body.cus_tel,
           bus_id: bus_id,
+          Status: "active",
         },
       });
       if (addCustomerPhone) {
@@ -138,6 +140,7 @@ class QuotationSaleController {
         where: {
           cus_tax: req.body.cus_tax,
           bus_id: bus_id,
+          Status: "active",
         },
       });
       if (addCustomerTax) {
