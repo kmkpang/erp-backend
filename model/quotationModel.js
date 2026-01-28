@@ -33,6 +33,10 @@ const Business = sequelize.define(
       type: DataTypes.STRING,
       allowNull: true,
     },
+    bus_code: {
+      type: DataTypes.STRING(20),
+      allowNull: true,
+    },
     bank_id: {
       type: DataTypes.INTEGER,
     },
