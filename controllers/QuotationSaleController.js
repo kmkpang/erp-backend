@@ -120,21 +120,21 @@ class QuotationSaleController {
         );
       }
 
-      const addCustomerPhone = await Customer.findOne({
-        where: {
-          cus_tel: req.body.cus_tel,
-          bus_id: bus_id,
-          Status: "active",
-        },
-      });
-      if (addCustomerPhone) {
-        return ResponseManager.SuccessResponse(
-          req,
-          res,
-          400,
-          "Customer Contact already exists"
-        );
-      }
+      // const addCustomerPhone = await Customer.findOne({
+      //   where: {
+      //     cus_tel: req.body.cus_tel,
+      //     bus_id: bus_id,
+      //     Status: "active",
+      //   },
+      // });
+      // if (addCustomerPhone) {
+      //   return ResponseManager.SuccessResponse(
+      //     req,
+      //     res,
+      //     400,
+      //     "Customer Contact already exists"
+      //   );
+      // }
 
       const addCustomerTax = await Customer.findOne({
         where: {
@@ -256,21 +256,21 @@ class QuotationSaleController {
           return;
         }
 
-        const addCustomerPhone = await Customer.findOne({
-          where: {
-            cus_tel: req.body.cus_tel,
-
-            cus_id: { [Op.ne]: req.params.id },
-          },
-        });
-        if (addCustomerPhone) {
-          return ResponseManager.SuccessResponse(
-            req,
-            res,
-            400,
-            "Customer Contact already exists"
-          );
-        }
+        // const addCustomerPhone = await Customer.findOne({
+        //   where: {
+        //     cus_tel: req.body.cus_tel,
+        //
+        //     cus_id: { [Op.ne]: req.params.id },
+        //   },
+        // });
+        // if (addCustomerPhone) {
+        //   return ResponseManager.SuccessResponse(
+        //     req,
+        //     res,
+        //     400,
+        //     "Customer Contact already exists"
+        //   );
+        // }
 
         const addCustomerTax = await Customer.findOne({
           where: {
