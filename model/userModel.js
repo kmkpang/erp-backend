@@ -34,7 +34,7 @@ const User = sequelize.define(
       allowNull: false,
     },
     accessToken: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
     },
     TokenCreate: {
       type: DataTypes.STRING,
