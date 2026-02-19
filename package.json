@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node index",
     "dev": "nodemon index",
-    "build": "echo 'No build step required'"
+    "build": "echo 'No build step required'",
+    "format": "npx prettier --write ."
   },
   "keywords": [],
   "author": "",

@@ -63,7 +63,7 @@ class EmployeeController {
           req,
           res,
           401,
-          "Unauthorized: Invalid token data"
+          "Unauthorized: Invalid token data",
         );
       }
 
@@ -84,7 +84,7 @@ class EmployeeController {
           req,
           res,
           400,
-          "National ID is already exist"
+          "National ID is already exist",
         );
       }
       if (checkphoneDup) {
@@ -92,7 +92,7 @@ class EmployeeController {
           req,
           res,
           400,
-          "Phone is already exist"
+          "Phone is already exist",
         );
       }
 
@@ -107,7 +107,7 @@ class EmployeeController {
           req,
           res,
           400,
-          "Email is already exist"
+          "Email is already exist",
         );
       }
 
@@ -181,7 +181,7 @@ class EmployeeController {
             req,
             res,
             400,
-            "National ID already exists"
+            "National ID already exists",
           );
           return;
         }
@@ -247,14 +247,14 @@ class EmployeeController {
           req,
           res,
           200,
-          "Employee Updated"
+          "Employee Updated",
         );
       } else {
         return ResponseManager.ErrorResponse(
           req,
           res,
           400,
-          "No Employee found"
+          "No Employee found",
         );
       }
     } catch (err) {
@@ -304,14 +304,14 @@ class EmployeeController {
           req,
           res,
           200,
-          "Employee data partially deleted"
+          "Employee data partially deleted",
         );
       } else {
         return ResponseManager.ErrorResponse(
           req,
           res,
           400,
-          "No Employee found"
+          "No Employee found",
         );
       }
     } catch (err) {
@@ -330,7 +330,7 @@ class EmployeeController {
           req,
           res,
           401,
-          "Unauthorized: Invalid token data"
+          "Unauthorized: Invalid token data",
         );
       }
 
@@ -347,7 +347,7 @@ class EmployeeController {
           req,
           res,
           400,
-          "Department already exists"
+          "Department already exists",
         );
       } else {
         const insert_depart = await Department.create({
@@ -383,7 +383,7 @@ class EmployeeController {
             req,
             res,
             400,
-            "Department already exists"
+            "Department already exists",
           );
           return;
         }
@@ -396,20 +396,20 @@ class EmployeeController {
             where: {
               departmentID: req.params.id,
             },
-          }
+          },
         );
         return ResponseManager.SuccessResponse(
           req,
           res,
           200,
-          "Department Updated"
+          "Department Updated",
         );
       } else {
         return ResponseManager.ErrorResponse(
           req,
           res,
           400,
-          "No Department found"
+          "No Department found",
         );
       }
     } catch (err) {
@@ -437,7 +437,7 @@ class EmployeeController {
           req,
           res,
           400,
-          "Cant Delete bacause Employee is binding"
+          "Cant Delete bacause Employee is binding",
         );
       }
       if (deletecate) {
@@ -450,14 +450,14 @@ class EmployeeController {
           req,
           res,
           200,
-          "Department Deleted"
+          "Department Deleted",
         );
       } else {
         return ResponseManager.ErrorResponse(
           req,
           res,
           400,
-          "No Department found"
+          "No Department found",
         );
       }
     } catch (err) {
@@ -501,7 +501,7 @@ class EmployeeController {
           req,
           res,
           401,
-          "Unauthorized: Invalid token data"
+          "Unauthorized: Invalid token data",
         );
       }
 
@@ -555,7 +555,7 @@ class EmployeeController {
           req,
           res,
           401,
-          "Unauthorized: Invalid token data"
+          "Unauthorized: Invalid token data",
         );
       }
       const { RoleName, userID, userEmail } = tokenData;
@@ -690,7 +690,7 @@ class EmployeeController {
           req,
           res,
           401,
-          "Unauthorized: Invalid token data"
+          "Unauthorized: Invalid token data",
         );
       }
       const { RoleName, userID, userEmail } = tokenData;
@@ -771,7 +771,7 @@ class EmployeeController {
             req,
             res,
             404,
-            "Manager department data not found"
+            "Manager department data not found",
           );
         }
 
@@ -835,7 +835,7 @@ class EmployeeController {
             req,
             res,
             400,
-            "Salary already exists"
+            "Salary already exists",
           );
           return;
         }
@@ -851,7 +851,7 @@ class EmployeeController {
             where: {
               payment_id: req.params.id,
             },
-          }
+          },
         );
         return ResponseManager.SuccessResponse(req, res, 200, "Salary Updated");
       } else {
@@ -900,7 +900,7 @@ class EmployeeController {
           req,
           res,
           401,
-          "Unauthorized: Invalid token data"
+          "Unauthorized: Invalid token data",
         );
       }
       const { RoleName, userID, userEmail } = tokenData;
@@ -981,7 +981,7 @@ class EmployeeController {
             req,
             res,
             404,
-            "Manager department data not found"
+            "Manager department data not found",
           );
         }
 
@@ -1036,7 +1036,7 @@ class EmployeeController {
           req,
           res,
           401,
-          "Unauthorized: Invalid token data"
+          "Unauthorized: Invalid token data",
         );
       }
 
@@ -1053,7 +1053,7 @@ class EmployeeController {
           req,
           res,
           400,
-          "Position already exists"
+          "Position already exists",
         );
       } else {
         const insert_depart = await Position.create({
@@ -1088,7 +1088,7 @@ class EmployeeController {
             req,
             res,
             400,
-            "Position already exists"
+            "Position already exists",
           );
           return;
         }
@@ -1101,20 +1101,20 @@ class EmployeeController {
             where: {
               PositionID: req.params.id,
             },
-          }
+          },
         );
         return ResponseManager.SuccessResponse(
           req,
           res,
           200,
-          "Position Updated"
+          "Position Updated",
         );
       } else {
         return ResponseManager.ErrorResponse(
           req,
           res,
           400,
-          "No Position found"
+          "No Position found",
         );
       }
     } catch (err) {
@@ -1139,14 +1139,14 @@ class EmployeeController {
           req,
           res,
           200,
-          "Position Deleted"
+          "Position Deleted",
         );
       } else {
         return ResponseManager.ErrorResponse(
           req,
           res,
           400,
-          "No Position found"
+          "No Position found",
         );
       }
     } catch (err) {
@@ -1181,7 +1181,7 @@ class EmployeeController {
           req,
           res,
           401,
-          "Unauthorized: Invalid token data"
+          "Unauthorized: Invalid token data",
         );
       }
       const { bus_id } = req.userData;
@@ -1198,7 +1198,7 @@ class EmployeeController {
           req,
           res,
           400,
-          "กรุณาใส่ เดือน ปี และ รอบเงินเดือน"
+          "กรุณาใส่ เดือน ปี และ รอบเงินเดือน",
         );
       }
 
@@ -1235,7 +1235,7 @@ class EmployeeController {
           req,
           res,
           200,
-          req.body.payments
+          req.body.payments,
         );
       } catch (error) {
         // Handle the error (duplicate payment)
@@ -1335,7 +1335,7 @@ class EmployeeController {
           req,
           res,
           401,
-          "Unauthorized: Invalid token data"
+          "Unauthorized: Invalid token data",
         );
       }
 
@@ -1346,7 +1346,7 @@ class EmployeeController {
           req,
           res,
           400,
-          "Invalid request format. Missing payments array."
+          "Invalid request format. Missing payments array.",
         );
 
         // return res
@@ -1372,7 +1372,7 @@ class EmployeeController {
             req,
             res,
             400,
-            "Duplicate payment entry."
+            "Duplicate payment entry.",
           );
         } else {
           paymentCreationPromises.push(
@@ -1383,7 +1383,7 @@ class EmployeeController {
               month: paymentData.month,
               year: paymentData.year,
               bus_id: bus_id,
-            })
+            }),
           );
         }
       }
@@ -1406,7 +1406,7 @@ class EmployeeController {
           req,
           res,
           401,
-          "Unauthorized: Invalid token data"
+          "Unauthorized: Invalid token data",
         );
       }
 
@@ -1421,7 +1421,7 @@ class EmployeeController {
           req,
           res,
           400,
-          "Leaving date already exists"
+          "Leaving date already exists",
         );
       } else {
         const data_leaving = await Leaving.create({
@@ -1450,7 +1450,7 @@ class EmployeeController {
           req,
           res,
           400,
-          "Not found leaving_id"
+          "Not found leaving_id",
         );
       } else {
         const body = {
@@ -1468,7 +1468,7 @@ class EmployeeController {
           req,
           res,
           200,
-          "Edit Leave Success"
+          "Edit Leave Success",
         );
       }
     } catch (err) {
@@ -1489,7 +1489,7 @@ class EmployeeController {
           req,
           res,
           401,
-          "Unauthorized: Invalid token data"
+          "Unauthorized: Invalid token data",
         );
       }
       const { RoleName, userID, userEmail } = tokenData;
@@ -1535,7 +1535,7 @@ class EmployeeController {
             req,
             res,
             404,
-            "Manager department data not found"
+            "Manager department data not found",
           );
         }
 
@@ -1573,7 +1573,7 @@ class EmployeeController {
           req,
           res,
           401,
-          "Unauthorized: Invalid token data"
+          "Unauthorized: Invalid token data",
         );
       }
 
@@ -1588,7 +1588,7 @@ class EmployeeController {
           req,
           res,
           400,
-          "Overtime date already exists"
+          "Overtime date already exists",
         );
       } else {
         const data_overtime = await Overtime.create({
@@ -1620,7 +1620,7 @@ class EmployeeController {
           req,
           res,
           401,
-          "Unauthorized: Invalid token data"
+          "Unauthorized: Invalid token data",
         );
       }
 

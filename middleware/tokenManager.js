@@ -13,7 +13,7 @@ class TokenManager {
       let accessToken = request.headers.authorization.split(" ")[1];
       let jwtResponse = jwt.verify(
         String(accessToken),
-        tokenData["secret_key"]
+        tokenData["secret_key"],
       );
       return jwtResponse;
     } catch (error) {
@@ -33,10 +33,7 @@ class TokenManager {
       Business.hasMany(User, { foreignKey: "bus_id" });
 
       const users = await User.findAll({
-        include: [
-          { model: Role },
-          { model: Business },
-        ],
+        include: [{ model: Role }, { model: Business }],
         where: { userID: userID },
       });
 
@@ -55,7 +52,7 @@ class TokenManager {
       return payload;
     } catch (error) {
       console.error("Error updating token:", error);
-      throw error; 
+      throw error;
     }
   }
 

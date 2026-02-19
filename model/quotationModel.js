@@ -43,7 +43,7 @@ const Business = sequelize.define(
   },
   {
     timestamps: false,
-  }
+  },
 );
 
 const Bank = sequelize.define(
@@ -69,7 +69,7 @@ const Bank = sequelize.define(
   },
   {
     timestamps: false,
-  }
+  },
 );
 
 const Customer = sequelize.define(
@@ -90,11 +90,11 @@ const Customer = sequelize.define(
     },
     cus_tel: {
       type: DataTypes.STRING(10),
-      allowNull: false,
+      allowNull: true,
     },
     cus_email: {
       type: DataTypes.STRING(40),
-      allowNull: false,
+      allowNull: true,
     },
     cus_tax: {
       type: DataTypes.STRING(13),
@@ -102,7 +102,7 @@ const Customer = sequelize.define(
     },
     cus_purchase: {
       type: DataTypes.STRING(40),
-      allowNull: false,
+      allowNull: true,
     },
     bus_id: {
       type: DataTypes.INTEGER,
@@ -115,7 +115,7 @@ const Customer = sequelize.define(
   },
   {
     timestamps: false,
-  }
+  },
 );
 
 const Quotation_sale = sequelize.define(
@@ -185,7 +185,7 @@ const Quotation_sale = sequelize.define(
   },
   {
     timestamps: false,
-  }
+  },
 );
 
 const Quotation_sale_detail = sequelize.define(
@@ -226,7 +226,7 @@ const Quotation_sale_detail = sequelize.define(
   },
   {
     timestamps: false,
-  }
+  },
 );
 
 const Invoice = sequelize.define(
@@ -264,7 +264,7 @@ const Invoice = sequelize.define(
   },
   {
     timestamps: false,
-  }
+  },
 );
 
 const TaxInvoice = sequelize.define(
@@ -306,7 +306,7 @@ const TaxInvoice = sequelize.define(
   },
   {
     timestamps: false,
-  }
+  },
 );
 
 const Billing = sequelize.define(
@@ -372,7 +372,7 @@ const Billing = sequelize.define(
   },
   {
     timestamps: false,
-  }
+  },
 );
 const Quotation_img = sequelize.define(
   "quotation_img",
@@ -388,7 +388,7 @@ const Quotation_img = sequelize.define(
   },
   {
     timestamps: false,
-  }
+  },
 );
 
 const Company_person = sequelize.define(
@@ -434,7 +434,7 @@ const Company_person = sequelize.define(
   },
   {
     timestamps: false,
-  }
+  },
 );
 
 // Associations
@@ -443,6 +443,9 @@ Quotation_sale.hasMany(Billing, { foreignKey: "sale_id" });
 
 Billing.belongsTo(Invoice, { foreignKey: "invoice_id" });
 Invoice.hasOne(Billing, { foreignKey: "invoice_id" });
+
+Invoice.belongsTo(Quotation_sale, { foreignKey: "sale_id" });
+Quotation_sale.hasOne(Invoice, { foreignKey: "sale_id" });
 
 Billing.belongsTo(TaxInvoice, { foreignKey: "tax_invoice_id" });
 TaxInvoice.hasOne(Billing, { foreignKey: "tax_invoice_id" });

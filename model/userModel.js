@@ -50,7 +50,7 @@ const User = sequelize.define(
   },
   {
     timestamps: false,
-  }
+  },
 );
 
 const Role = sequelize.define(
@@ -68,7 +68,7 @@ const Role = sequelize.define(
   },
   {
     timestamps: false,
-  }
+  },
 );
 
 const UserActivity = sequelize.define(
@@ -111,7 +111,7 @@ const UserActivity = sequelize.define(
   },
   {
     timestamps: false,
-  }
+  },
 );
 
 module.exports = { User, Role, UserActivity };

@@ -16,7 +16,7 @@ class AuthController {
 
   static getToken(req, res) {
     res.send(
-      TokenManager.getGenerateAccessToken({ username: req.params.username })
+      TokenManager.getGenerateAccessToken({ username: req.params.username }),
     );
   }
   static checkAuthen(req, res) {
@@ -55,7 +55,7 @@ class AuthController {
           req,
           res,
           400,
-          "userEmail and userPassword are required"
+          "userEmail and userPassword are required",
         );
       }
 
@@ -76,7 +76,7 @@ class AuthController {
             req,
             res,
             500,
-            "User role not found. Please contact administrator."
+            "User role not found. Please contact administrator.",
           );
         }
 
@@ -103,7 +103,7 @@ class AuthController {
                 accessToken: token,
                 //TokenCreate: thaiDateString,
               },
-              { where: { userID: user.userID } }
+              { where: { userID: user.userID } },
             );
           }
 
@@ -113,7 +113,7 @@ class AuthController {
             user.userID,
             `Read/login/${user.role.RoleName}`,
             "Login",
-            bodyString
+            bodyString,
           );
 
           // ส่งข้อมูล Token และรายละเอียดผู้ใช้กลับไป
@@ -132,7 +132,7 @@ class AuthController {
             req,
             res,
             401,
-            "Incorrect username or password"
+            "Incorrect username or password",
           );
         }
       } else {
@@ -140,7 +140,7 @@ class AuthController {
           req,
           res,
           404,
-          "Incorrect username or password"
+          "Incorrect username or password",
         );
       }
     } catch (err) {
@@ -263,7 +263,7 @@ class AuthController {
           req,
           res,
           400,
-          "User already exists"
+          "User already exists",
         );
       }
 
@@ -293,7 +293,7 @@ class AuthController {
           req,
           res,
           400,
-          "User already exists"
+          "User already exists",
         );
       }
 
@@ -307,7 +307,7 @@ class AuthController {
           req,
           res,
           400,
-          "User phone number already exists"
+          "User phone number already exists",
         );
       }
 
@@ -350,7 +350,7 @@ class AuthController {
           req,
           res,
           400,
-          "bus_name is required"
+          "bus_name is required",
         );
       }
       const existingUser = await User.findOne({
@@ -363,7 +363,7 @@ class AuthController {
           req,
           res,
           400,
-          "User already exists"
+          "User already exists",
         );
       }
 
@@ -393,7 +393,7 @@ class AuthController {
             req,
             res,
             400,
-            "Only JPEG and PNG image files are allowed"
+            "Only JPEG and PNG image files are allowed",
           );
         }
         if (req.file && req.file.size > 5 * 1024 * 1024) {
@@ -401,7 +401,7 @@ class AuthController {
             req,
             res,
             400,
-            "File size exceeds 5 MB limit"
+            "File size exceeds 5 MB limit",
           );
         }
 
@@ -484,7 +484,7 @@ class AuthController {
           req,
           res,
           500,
-          "Failed to create Business"
+          "Failed to create Business",
         );
       }
     } catch (err) {
@@ -535,7 +535,7 @@ class AuthController {
             req,
             res,
             400,
-            "Email,UserName,LastName,Password already exists"
+            "Email,UserName,LastName,Password already exists",
           );
         }
         // const hashedPassword = await bcrypt.hash(req.body.userPassword, 10);
@@ -553,7 +553,7 @@ class AuthController {
             where: {
               userID: req.params.id,
             },
-          }
+          },
         );
         return ResponseManager.SuccessResponse(req, res, 200, "User Updated");
       }
@@ -622,7 +622,7 @@ class AuthController {
             req,
             res,
             400,
-            "User have only 1 , cant not delete"
+            "User have only 1 , cant not delete",
           );
         } else {
           await User.destroy({
@@ -661,7 +661,7 @@ class AuthController {
             req,
             res,
             400,
-            "Password already exists"
+            "Password already exists",
           );
         } else {
           await User.update(
@@ -672,13 +672,13 @@ class AuthController {
               where: {
                 userEmail: req.body.userEmail,
               },
-            }
+            },
           );
           return ResponseManager.SuccessResponse(
             req,
             res,
             200,
-            "Password Updated"
+            "Password Updated",
           );
         }
       } else {
@@ -781,7 +781,7 @@ class AuthController {
           req,
           res,
           400,
-          "Role already exists"
+          "Role already exists",
         );
       } else {
         const insert_cate = await Role.create({
@@ -815,7 +815,7 @@ class AuthController {
             req,
             res,
             400,
-            "Role already exists"
+            "Role already exists",
           );
           return;
         }
@@ -828,7 +828,7 @@ class AuthController {
             where: {
               RoleID: req.params.id,
             },
-          }
+          },
         );
         return ResponseManager.SuccessResponse(req, res, 200, "Role Updated");
       }

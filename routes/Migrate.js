@@ -20,7 +20,7 @@ Route.get(RouteName + "/tablelist", MigrateController.tablelist);
 Route.get(
   RouteName + "/export-csv/:tableName",
   verifyTokenWithbus_id,
-  MigrateController.exportCsv
+  MigrateController.exportCsv,
 );
 
 Route.get(RouteName + "/export-all-csv", MigrateController.exportAllCsv);
@@ -28,7 +28,7 @@ Route.get(RouteName + "/export-all-csv", MigrateController.exportAllCsv);
 Route.post(
   RouteName + "/importcsv",
   upload.single("csvFile"),
-  MigrateController.importCsv
+  MigrateController.importCsv,
 );
 
 // API Endpoint สำหรับอัปโหลดไฟล์ zip
@@ -45,7 +45,7 @@ Route.post(
       console.error("Error processing zip file:", error);
       res.status(500).send("Error processing zip file.");
     }
-  }
+  },
 );
 
 module.exports = Route;

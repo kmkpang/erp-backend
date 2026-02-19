@@ -19,18 +19,18 @@ Route.post(RouteName + "/checkAuthen", AuthController.checkAuthen);
 Route.post(
   RouteName + "/RegisterUsers",
   verifyTokenWithbus_id,
-  AuthController.RegisterUsers
+  AuthController.RegisterUsers,
 );
 Route.post(
   RouteName + "/RegisterNewUsers",
   type,
-  AuthController.RegisterNewUsers
+  AuthController.RegisterNewUsers,
 );
 Route.delete(RouteName + "/DeleteUsers/:id", AuthController.DeleteUsers);
 Route.put(
   RouteName + "/EditUsers/:id",
   verifyTokenWithbus_id,
-  AuthController.EditUsers
+  AuthController.EditUsers,
 );
 Route.get(RouteName + "/GetRole", AuthController.GetRole);
 Route.post(RouteName + "/AddRole", AuthController.AddRole);
@@ -40,7 +40,7 @@ Route.delete(RouteName + "/DeleteRole/:id", AuthController.DeleteRole);
 Route.get(
   RouteName + "/GetUsers",
   verifyTokenWithbus_id,
-  AuthController.GetUsers
+  AuthController.GetUsers,
 );
 Route.get(RouteName + "/GetUserByID/:id", AuthController.GetUserByID);
 Route.put(RouteName + "/forgetPassword", AuthController.forgetPassword);

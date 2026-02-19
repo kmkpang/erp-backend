@@ -23,7 +23,6 @@ const verifyTokenWithRole = (requiredRoles) => (req, res, next) => {
     User.belongsTo(Role, { foreignKey: "RoleID" });
     Role.hasMany(User, { foreignKey: "RoleID" });
 
-
     console.log(requiredRoles);
 
     User.findAll({
@@ -54,7 +53,7 @@ const verifyTokenWithRole = (requiredRoles) => (req, res, next) => {
         }
 
         const hasRequiredRole = requiredRoles.some((role) =>
-          userRoles.includes(role)
+          userRoles.includes(role),
         );
 
         if (!hasRequiredRole) {
@@ -63,10 +62,11 @@ const verifyTokenWithRole = (requiredRoles) => (req, res, next) => {
 
         req.user = decoded;
 
-        req.userData = { 
+        req.userData = {
           ...req.userData,
-          userId: req.user.userID, 
-          role: req.user.userRole };
+          userId: req.user.userID,
+          role: req.user.userRole,
+        };
         next();
       })
       .catch((error) => {
@@ -104,12 +104,10 @@ const logUserActivity = (activityType, routeName) => {
           body: bodyString,
           timestamp: thaiDateString,
         });
-        await res
-          .status(401)
-          .json({
-            message:
-              "No token provided , Forbidden: Insufficient permissions , Unauthorized: Invalid data format in the database , Unauthorized: Invalid token",
-          });
+        await res.status(401).json({
+          message:
+            "No token provided , Forbidden: Insufficient permissions , Unauthorized: Invalid data format in the database , Unauthorized: Invalid token",
+        });
       } else {
         await UserActivity.create({
           userId: loggedUserId,
@@ -159,7 +157,7 @@ const verifyTokenWithbus_id = async (req, res, next) => {
           ],
           where: {
             userID: userIDFromToken,
-            accessToken: token, 
+            accessToken: token,
           },
         });
 
@@ -172,14 +170,14 @@ const verifyTokenWithbus_id = async (req, res, next) => {
         req.userData = {
           ...req.userData,
           userId: user.userID,
-          bus_id: user.business.bus_id, 
+          bus_id: user.business.bus_id,
         };
 
         next();
       } catch (dbError) {
         console.error(
           "Error checking token and bus_id in the database:",
-          dbError
+          dbError,
         );
         return res.status(500).json({ message: "Internal Server Error" });
       }

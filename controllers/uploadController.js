@@ -52,7 +52,7 @@ exports.uploadAndExtractZip = async (zipFilePath) => {
                   await Model.destroy({ truncate: true });
                   await Model.bulkCreate(rows);
                   console.log(
-                    `Data inserted into ${tableName} (${rows.length} rows)`
+                    `Data inserted into ${tableName} (${rows.length} rows)`,
                   );
                 } catch (err) {
                   console.error("Error inserting data:", err);

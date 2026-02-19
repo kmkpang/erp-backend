@@ -49,7 +49,7 @@ const Product = sequelize.define(
   },
   {
     timestamps: false,
-  }
+  },
 );
 
 const productType = sequelize.define(
@@ -67,7 +67,7 @@ const productType = sequelize.define(
   },
   {
     timestamps: false,
-  }
+  },
 );
 
 const productCategory = sequelize.define(
@@ -89,7 +89,7 @@ const productCategory = sequelize.define(
   },
   {
     timestamps: false,
-  }
+  },
 );
 
 const Transaction = sequelize.define(
@@ -123,7 +123,7 @@ const Transaction = sequelize.define(
   },
   {
     timestamps: false,
-  }
+  },
 );
 
 const Expense = sequelize.define(
@@ -161,7 +161,7 @@ const Expense = sequelize.define(
   },
   {
     timestamps: false,
-  }
+  },
 );
 
 Product.belongsTo(productCategory, { foreignKey: "categoryID" });

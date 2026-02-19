@@ -81,7 +81,7 @@ const Employee = sequelize.define(
   },
   {
     timestamps: false,
-  }
+  },
 );
 
 const Position = sequelize.define(
@@ -103,7 +103,7 @@ const Position = sequelize.define(
   },
   {
     timestamps: false,
-  }
+  },
 );
 
 const Salary_pay = sequelize.define(
@@ -141,7 +141,7 @@ const Salary_pay = sequelize.define(
   },
   {
     timestamps: false,
-  }
+  },
 );
 
 const Leaving = sequelize.define(
@@ -171,7 +171,7 @@ const Leaving = sequelize.define(
   },
   {
     timestamps: false,
-  }
+  },
 );
 
 const Overtime = sequelize.define(
@@ -209,7 +209,7 @@ const Overtime = sequelize.define(
   },
   {
     timestamps: false,
-  }
+  },
 );
 
 const Department = sequelize.define(
@@ -231,7 +231,7 @@ const Department = sequelize.define(
   },
   {
     timestamps: false,
-  }
+  },
 );
 
 Employee.belongsTo(Position, { foreignKey: "PositionID" });

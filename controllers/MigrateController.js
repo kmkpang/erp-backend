@@ -39,19 +39,19 @@ class MigrateController {
       const rolesMove = await sourceDB.query("SELECT * FROM roles");
       const productsMove = await sourceDB.query("SELECT * FROM products");
       const producttypesMove = await sourceDB.query(
-        "SELECT * FROM product_types"
+        "SELECT * FROM product_types",
       );
       const producttransactionsMove = await sourceDB.query(
-        "SELECT * FROM product_transactions"
+        "SELECT * FROM product_transactions",
       );
       const productcategoriesMove = await sourceDB.query(
-        "SELECT * FROM product_categories"
+        "SELECT * FROM product_categories",
       );
       const positionsMove = await sourceDB.query("SELECT * FROM positions");
       const employeesMove = await sourceDB.query("SELECT * FROM employees");
       const departmentsMove = await sourceDB.query("SELECT * FROM departments");
       const UserActivitiesMove = await sourceDB.query(
-        'SELECT * FROM public."UserActivities"'
+        'SELECT * FROM public."UserActivities"',
       );
 
       // Insert data into the destination database using bulkCreate
@@ -117,7 +117,7 @@ class MigrateController {
         {
           type: Sequelize.QueryTypes.SELECT,
           replacements: { bus_id },
-        }
+        },
       );
 
       if (data.length === 0) {
@@ -203,7 +203,7 @@ class MigrateController {
 
       const zipFilePath = path.join(
         `${__dirname}/../export/`,
-        "exported_files.zip"
+        "exported_files.zip",
       );
       const zipStream = fs.createWriteStream(zipFilePath);
       const archive = archiver("zip", { zlib: { level: 9 } });
@@ -219,17 +219,17 @@ class MigrateController {
             for (const tableName of tableNames) {
               const csvFilePath = path.join(
                 `${__dirname}/../export/`,
-                `${tableName}.csv`
+                `${tableName}.csv`,
               );
 
               if (fs.existsSync(csvFilePath)) {
                 fs.unlinkSync(csvFilePath);
                 console.log(
-                  `CSV file ${tableName}_export.csv removed successfully`
+                  `CSV file ${tableName}_export.csv removed successfully`,
                 );
               } else {
                 console.log(
-                  `CSV file ${tableName}_export.csv not found. Skipping...`
+                  `CSV file ${tableName}_export.csv not found. Skipping...`,
                 );
               }
             }
@@ -259,11 +259,11 @@ class MigrateController {
 
           archive.append(
             fs.createReadStream(
-              path.join(`${__dirname}/../export/`, `${tableName}.csv`)
+              path.join(`${__dirname}/../export/`, `${tableName}.csv`),
             ),
             {
               name: `${tableName}.csv`,
-            }
+            },
           );
         } else {
           console.log(`No data found for table: ${tableName}. Skipping...`);
@@ -293,11 +293,11 @@ class MigrateController {
             await sequelize.transaction(async (transaction) => {
               await sequelize.query(
                 `CREATE TABLE IF NOT EXISTS "${tableName}" (${Object.keys(
-                  columns
+                  columns,
                 )
                   .map((key) => `"${key}" TEXT`)
                   .join(", ")})`,
-                { transaction }
+                { transaction },
               );
 
               await sequelize.query(`DELETE FROM "${tableName}"`, {
@@ -307,7 +307,7 @@ class MigrateController {
 
               for (const row of results) {
                 const insertQuery = `INSERT INTO "${tableName}" (${Object.keys(
-                  row
+                  row,
                 )
                   .map((key) => `"${key}"`)
                   .join(", ")}) VALUES (${Object.values(row)
@@ -356,7 +356,7 @@ class MigrateController {
           {
             type: QueryTypes.SELECT,
             replacements: { tableName },
-          }
+          },
         );
 
         if (!tableExists.length) {

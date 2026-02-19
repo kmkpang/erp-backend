@@ -29,7 +29,7 @@ class ProductController {
           req,
           res,
           401,
-          "Unauthorized: Invalid token data"
+          "Unauthorized: Invalid token data",
         );
       }
 
@@ -37,7 +37,10 @@ class ProductController {
 
       var products = await Product.findAll({
         include: [productCategory, productType],
-        where: { bus_id: bus_id },
+        where: {
+          bus_id: bus_id,
+          Status: { [Op.ne]: "not active" },
+        },
       });
 
       // ตรวจสอบและอัพเดท status หาก amount = 0
@@ -82,7 +85,7 @@ class ProductController {
           req,
           res,
           401,
-          "Unauthorized: Invalid token data"
+          "Unauthorized: Invalid token data",
         );
       }
 
@@ -98,7 +101,7 @@ class ProductController {
         req,
         res,
         200,
-        ProductByProductType
+        ProductByProductType,
       );
     } catch (err) {
       return ResponseManager.CatchResponse(req, res, err.message);
@@ -116,7 +119,7 @@ class ProductController {
           req,
           res,
           401,
-          "Unauthorized: Invalid token data"
+          "Unauthorized: Invalid token data",
         );
       }
 
@@ -139,7 +142,7 @@ class ProductController {
           req,
           res,
           400,
-          "Product already exists"
+          "Product already exists",
         );
       } else {
         // if (!req.file) {
@@ -157,7 +160,7 @@ class ProductController {
               req,
               res,
               400,
-              "File size exceeds 5 MB limit"
+              "File size exceeds 5 MB limit",
             );
           }
 
@@ -167,7 +170,7 @@ class ProductController {
               req,
               res,
               400,
-              "Only JPEG and PNG image files are allowed"
+              "Only JPEG and PNG image files are allowed",
             );
           }
 
@@ -252,7 +255,7 @@ class ProductController {
           req,
           res,
           200,
-          "Product Updated"
+          "Product Updated",
         );
       } else {
         return ResponseManager.ErrorResponse(req, res, 400, "No product found");
@@ -289,7 +292,7 @@ class ProductController {
           req,
           res,
           200,
-          "Product Deleted"
+          "Product Deleted",
         );
       } else {
         return ResponseManager.ErrorResponse(req, res, 400, "No product found");
@@ -310,7 +313,7 @@ class ProductController {
           req,
           res,
           401,
-          "Unauthorized: Invalid token data"
+          "Unauthorized: Invalid token data",
         );
       }
 
@@ -327,7 +330,7 @@ class ProductController {
           req,
           res,
           400,
-          "Category already exist"
+          "Category already exist",
         );
       } else {
         const insert_cate = await productCategory.create({
@@ -362,7 +365,7 @@ class ProductController {
             req,
             res,
             400,
-            "Category already exists"
+            "Category already exists",
           );
           return;
         }
@@ -375,20 +378,20 @@ class ProductController {
             where: {
               categoryID: req.params.id,
             },
-          }
+          },
         );
         return ResponseManager.SuccessResponse(
           req,
           res,
           200,
-          "Category Updated"
+          "Category Updated",
         );
       } else {
         return ResponseManager.ErrorResponse(
           req,
           res,
           400,
-          "No Category found"
+          "No Category found",
         );
       }
     } catch (err) {
@@ -447,7 +450,7 @@ class ProductController {
           req,
           res,
           403,
-          "ไม่สามารถลบหมวดหมู่เริ่มต้นได้"
+          "ไม่สามารถลบหมวดหมู่เริ่มต้นได้",
         );
       }
 
@@ -464,14 +467,14 @@ class ProductController {
           req,
           res,
           200,
-          "Category Deleted"
+          "Category Deleted",
         );
       } else {
         return ResponseManager.ErrorResponse(
           req,
           res,
           400,
-          "No Category found"
+          "No Category found",
         );
       }
     } catch (err) {
@@ -519,7 +522,7 @@ class ProductController {
               where: {
                 productID: req.body.productID,
               },
-            }
+            },
           );
 
           return ResponseManager.SuccessResponse(req, res, 200, "success");
@@ -529,7 +532,7 @@ class ProductController {
               req,
               res,
               400,
-              "product amount low than quantity"
+              "product amount low than quantity",
             );
           } else {
             await Transaction.create({
@@ -549,7 +552,7 @@ class ProductController {
                 where: {
                   productID: req.body.productID,
                 },
-              }
+              },
             );
 
             // อัปเดตจำนวนสินค้าในตาราง Product
@@ -564,7 +567,7 @@ class ProductController {
                   where: {
                     productID: req.body.productID,
                   },
-                }
+                },
               );
             }
 
@@ -572,7 +575,7 @@ class ProductController {
               req,
               res,
               200,
-              "product issue success"
+              "product issue success",
             );
           }
         } else {
@@ -580,7 +583,7 @@ class ProductController {
             req,
             res,
             400,
-            "Please select transaction type"
+            "Please select transaction type",
           );
         }
       } else {
@@ -588,7 +591,7 @@ class ProductController {
           req,
           res,
           400,
-          "Product Not found"
+          "Product Not found",
         );
       }
     } catch (err) {
@@ -624,7 +627,7 @@ class ProductController {
             {
               amount: getProductAmount.amount - quantityDifference,
             },
-            { where: { productID: req.body.productID } }
+            { where: { productID: req.body.productID } },
           );
 
           // อัปเดตสถานะหากจำนวนสินค้าหลังอัปเดตเหลือ 0
@@ -635,7 +638,7 @@ class ProductController {
           if (updatedProduct.amount === 0) {
             await Product.update(
               { Status: "Discontinued" },
-              { where: { productID: req.body.productID } }
+              { where: { productID: req.body.productID } },
             );
           }
 
@@ -648,13 +651,13 @@ class ProductController {
               quantity_added: 0,
               quantity_removed: req.body.quantity,
             },
-            { where: { transaction_id: req.params.id } }
+            { where: { transaction_id: req.params.id } },
           );
           return ResponseManager.SuccessResponse(
             req,
             res,
             200,
-            "product receive success"
+            "product receive success",
           );
         } else if (
           transactionType == "Receive" &&
@@ -668,7 +671,7 @@ class ProductController {
             {
               amount: getProductAmount.amount + quantityDifference,
             },
-            { where: { productID: req.body.productID } }
+            { where: { productID: req.body.productID } },
           );
 
           // อัปเดตสถานะให้กลับมาใช้งานได้หากจำนวนสินค้ากลายเป็นมากกว่า 0
@@ -682,7 +685,7 @@ class ProductController {
           ) {
             await Product.update(
               { Status: "active" },
-              { where: { productID: req.body.productID } }
+              { where: { productID: req.body.productID } },
             );
           }
 
@@ -695,13 +698,13 @@ class ProductController {
               quantity_added: req.body.quantity,
               quantity_removed: 0,
             },
-            { where: { transaction_id: req.params.id } }
+            { where: { transaction_id: req.params.id } },
           );
           return ResponseManager.SuccessResponse(
             req,
             res,
             200,
-            "product receive success"
+            "product receive success",
           );
         } else if (transactionType == "Receive") {
           await Transaction.update(
@@ -716,7 +719,7 @@ class ProductController {
               where: {
                 transaction_id: req.params.id,
               },
-            }
+            },
           );
 
           // คำนวณส่วนต่าง
@@ -731,14 +734,14 @@ class ProductController {
               where: {
                 productID: req.body.productID,
               },
-            }
+            },
           );
 
           return ResponseManager.SuccessResponse(
             req,
             res,
             200,
-            "product receive success"
+            "product receive success",
           );
         } else if (transactionType == "Issue") {
           if (getProductAmount.dataValues.amount < req.body.quantity) {
@@ -746,7 +749,7 @@ class ProductController {
               req,
               res,
               400,
-              "product amount low than quantity"
+              "product amount low than quantity",
             );
           } else {
             await Transaction.update(
@@ -761,7 +764,7 @@ class ProductController {
                 where: {
                   transaction_id: req.params.id,
                 },
-              }
+              },
             );
             // คำนวณส่วนต่าง
             const quantityDifference =
@@ -775,14 +778,14 @@ class ProductController {
                 where: {
                   productID: req.body.productID,
                 },
-              }
+              },
             );
 
             return ResponseManager.SuccessResponse(
               req,
               res,
               200,
-              "product issue success"
+              "product issue success",
             );
           }
         } else {
@@ -790,7 +793,7 @@ class ProductController {
             req,
             res,
             400,
-            "Please select transaction type"
+            "Please select transaction type",
           );
         }
       } else {
@@ -798,7 +801,7 @@ class ProductController {
           req,
           res,
           400,
-          "Product Not found"
+          "Product Not found",
         );
       }
     } catch (err) {
@@ -820,7 +823,7 @@ class ProductController {
           req,
           res,
           401,
-          "Unauthorized: Invalid token data"
+          "Unauthorized: Invalid token data",
         );
       }
 
@@ -841,7 +844,7 @@ class ProductController {
       transaction_list.forEach((log) => {
         const dateOnly = log.transaction_date
           ? moment(log.transaction_date, "DD/MM/YYYY HH:mm:ss").format(
-              "DD/MM/YYYY"
+              "DD/MM/YYYY",
             )
           : "Invalid Date";
 
@@ -906,14 +909,14 @@ class ProductController {
           req,
           res,
           200,
-          "ProductType Deleted"
+          "ProductType Deleted",
         );
       } else {
         return ResponseManager.ErrorResponse(
           req,
           res,
           400,
-          "No ProductType found"
+          "No ProductType found",
         );
       }
     } catch (err) {
@@ -957,7 +960,7 @@ class ProductController {
           req,
           res,
           401,
-          "Unauthorized: Invalid token data"
+          "Unauthorized: Invalid token data",
         );
       }
 
@@ -1004,7 +1007,7 @@ class ProductController {
           req,
           res,
           401,
-          "Unauthorized: Invalid token data"
+          "Unauthorized: Invalid token data",
         );
       }
 
@@ -1027,7 +1030,7 @@ class ProductController {
           req,
           res,
           401,
-          "Unauthorized: Invalid token data"
+          "Unauthorized: Invalid token data",
         );
       }
 
@@ -1071,7 +1074,7 @@ class ProductController {
           req,
           res,
           401,
-          "Unauthorized: Invalid token data"
+          "Unauthorized: Invalid token data",
         );
       }
 
@@ -1082,7 +1085,7 @@ class ProductController {
           expense_amount: req.body.expense_amount,
           quantity_remark: req.body.quantity_remark,
         },
-        { where: { expense_id: req.params.id } }
+        { where: { expense_id: req.params.id } },
       );
 
       return ResponseManager.SuccessResponse(req, res, 200, req.params.id);
@@ -1099,7 +1102,7 @@ class ProductController {
           req,
           res,
           401,
-          "Unauthorized: Invalid token data"
+          "Unauthorized: Invalid token data",
         );
       }
 
@@ -1130,7 +1133,7 @@ class ProductController {
           req,
           res,
           404,
-          "Product not found"
+          "Product not found",
         );
       }
 
@@ -1146,7 +1149,7 @@ class ProductController {
             req,
             res,
             400,
-            "Insufficient stock"
+            "Insufficient stock",
           );
         }
         newAmount = product.amount - quantity;
@@ -1157,14 +1160,14 @@ class ProductController {
         { amount: newAmount },
         {
           where: { productID: id },
-        }
+        },
       );
 
       await Billing.update(
         { deleted_at: billingStatus },
         {
           where: { billing_number: req.body.billing_number },
-        }
+        },
       );
 
       return ResponseManager.SuccessResponse(req, res, 200, "Product Updated");
