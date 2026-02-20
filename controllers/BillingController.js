@@ -78,7 +78,7 @@ class BillingController {
       // CASE 1: From Scratch (No invoice_id, no sale_id)
       if (!targetInvoiceId && !targetSaleId) {
         // 1. Create Quotation
-        const qtPrefix = `QT-${todayPrefix}`;
+        const qtPrefix = `QT-AUTO-${todayPrefix}`;
         // Logic for simple number gen (simplistic for speed)
         const qtNum = await generateId(
           qtPrefix,
@@ -90,6 +90,8 @@ class BillingController {
           {
             sale_number: qtNum,
             sale_date: req.body.billing_date,
+            credit_date_number: "0",
+            credit_expired_date: req.body.billing_date,
             bus_id: bus_id,
             cus_id: req.body.cus_id,
             employeeID: req.body.employeeID,
@@ -110,6 +112,8 @@ class BillingController {
         const details = products.map((p) => ({
           ...p,
           sale_id: targetSaleId,
+          sale_discount: p.sale_discount || 0,
+          discounttype: p.discounttype || "percent",
         }));
         await Quotation_sale_detail.bulkCreate(details, { transaction });
       }
@@ -124,7 +128,7 @@ class BillingController {
           targetInvoiceId = existingInv.invoice_id;
         } else {
           // Create Invoice (Auto)
-          const invPrefix = `IV-${todayPrefix}`;
+          const invPrefix = `IV-AUTO-${todayPrefix}`;
           const invNum = await generateId(
             invPrefix,
             "invoices",
@@ -184,7 +188,7 @@ class BillingController {
         where: { invoice_id: targetInvoiceId },
       });
       if (!taxInvoice) {
-        const txPrefix = `TX-${todayPrefix}`;
+        const txPrefix = `TX-AUTO-${todayPrefix}`;
         const txNum = await generateId(
           txPrefix,
           "tax_invoices",
@@ -220,6 +224,7 @@ class BillingController {
           pay_number: req.body.pay_number || "",
           pay_branch: req.body.pay_branch || "",
           pay_date: req.body.pay_date || "",
+          pay_image_url: req.body.pay_image_url || null,
         },
         { transaction },
       );
@@ -334,6 +339,7 @@ LEFT JOIN products p ON qsd."productID" = p."productID"
           pay_number: sale.pay_number,
           pay_branch: sale.pay_branch,
           pay_date: sale.pay_date,
+          pay_image_url: sale.pay_image_url,
           remark: sale.billings_remark,
           vatType: sale.vatType,
           deleted_at: sale.billings_deleted_at,
@@ -411,7 +417,8 @@ LEFT JOIN products p ON qsd."productID" = p."productID"
             pay_bank = :pay_bank,
             pay_number = :pay_number,
             pay_branch = :pay_branch,
-            pay_date = :pay_date
+            pay_date = :pay_date,
+            pay_image_url = COALESCE(:pay_image_url, pay_image_url)
         FROM invoices
         LEFT JOIN quotation_sales ON quotation_sales.sale_id = invoices.sale_id
         WHERE billings.billing_id = :id
@@ -427,6 +434,7 @@ LEFT JOIN products p ON qsd."productID" = p."productID"
             pay_number: req.body.pay_number || "",
             pay_branch: req.body.pay_branch || "",
             pay_date: req.body.pay_date || "",
+            pay_image_url: req.body.pay_image_url || null,
             id: req.params.id,
             bus_id: req.userData.bus_id,
           },
@@ -441,22 +449,40 @@ LEFT JOIN products p ON qsd."productID" = p."productID"
 
   static async deleteBilling(req, res) {
     try {
-      await Billing.destroy({
-        where: {
-          invoice_id: req.params.id,
-        },
+      const billing = await Billing.findOne({
+        where: { billing_id: req.params.id }
       });
 
-      await TaxInvoice.update(
-        { tax_invoice_status: "Pending", deleted_at: "" },
-        {
-          where: {
-            invoice_id: req.params.id,
-          },
-        },
-      );
+      if (!billing) {
+        return ResponseManager.ErrorResponse(req, res, 404, "Billing not found");
+      }
 
-      return ResponseManager.SuccessResponse(req, res, 200, "Billing Deleted ");
+      const { invoice_id, sale_id } = billing;
+
+      await Billing.destroy({
+        where: { billing_id: req.params.id },
+      });
+
+      if (invoice_id) {
+        await TaxInvoice.update(
+          { tax_invoice_status: "Pending", deleted_at: null },
+          { where: { invoice_id } }
+        );
+
+        await Invoice.update(
+          { invoice_status: "Pending" },
+          { where: { invoice_id } }
+        );
+      }
+
+      if (sale_id) {
+        await Quotation_sale.update(
+          { status: "Allowed" },
+          { where: { sale_id } }
+        );
+      }
+
+      return ResponseManager.SuccessResponse(req, res, 200, "Billing Deleted");
     } catch (err) {
       return ResponseManager.CatchResponse(req, res, err.message);
     }
@@ -582,10 +608,12 @@ LEFT JOIN products p ON qsd."productID" = p."productID"
       );
 
       // STEP 2: Create Quotation Details
-      const products = req.body.products;
-      for (let i = 0; i < products.length; i++) {
-        products[i].sale_id = insertQuotation.sale_id;
-      }
+      const products = req.body.products.map(p => ({
+        ...p,
+        sale_id: insertQuotation.sale_id,
+        sale_discount: p.sale_discount || 0,
+        discounttype: p.discounttype || "percent",
+      }));
       await Quotation_sale_detail.bulkCreate(products, { transaction });
 
       // STEP 3: Create Invoice (auto-generated)
@@ -630,6 +658,7 @@ LEFT JOIN products p ON qsd."productID" = p."productID"
           pay_number: req.body.pay_number || "",
           pay_branch: req.body.pay_branch || "",
           pay_date: req.body.pay_date || "",
+          pay_image_url: req.body.pay_image_url || null,
         },
         { transaction },
       );
@@ -651,6 +680,33 @@ LEFT JOIN products p ON qsd."productID" = p."productID"
       )
         await transaction.rollback();
       console.error("Error in addDirectBilling:", err);
+      return ResponseManager.CatchResponse(req, res, err.message);
+    }
+  }
+
+  static async uploadSlipImage(req, res) {
+    try {
+      if (!req.file) {
+        return ResponseManager.ErrorResponse(req, res, 400, "No image file provided");
+      }
+
+      const allowedMimeTypes = ["image/jpeg", "image/png"];
+      if (!allowedMimeTypes.includes(req.file.mimetype)) {
+        return ResponseManager.ErrorResponse(
+          req,
+          res,
+          400,
+          "Only JPEG and PNG image files are allowed",
+        );
+      }
+
+      const result = await cloudinary.uploader.upload(req.file.path);
+
+      return ResponseManager.SuccessResponse(req, res, 200, {
+        pay_image_url: result.secure_url,
+      });
+    } catch (err) {
+      console.error("Error in uploadSlipImage:", err);
       return ResponseManager.CatchResponse(req, res, err.message);
     }
   }

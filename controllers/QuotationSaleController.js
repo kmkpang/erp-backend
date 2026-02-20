@@ -929,7 +929,14 @@ class QuotationSaleController {
         ],
         where: {
           bus_id: bus_id,
-          remarkInfernal: { [Op.ne]: "Auto-generated from direct billing" },
+          [Op.or]: [
+            { remarkInfernal: { [Op.is]: null } },
+            { 
+              remarkInfernal: { 
+                [Op.notIn]: ["Auto-generated from direct billing", "Auto-generated from Billing Creation"]
+              } 
+            }
+          ]
         },
         order: [["sale_number", "ASC"]], // <-- เรียงจากน้อยไปมาก
       });

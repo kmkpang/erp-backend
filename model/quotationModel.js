@@ -365,6 +365,10 @@ const Billing = sequelize.define(
       type: DataTypes.STRING(40),
       allowNull: true,
     },
+    pay_image_url: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+    },
     deleted_at: {
       type: DataTypes.STRING(100),
       allowNull: true,

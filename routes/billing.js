@@ -44,4 +44,10 @@ Route.post(
   BillingController.addDirectBilling,
 );
 
+Route.post(
+  RouteName + "/uploadSlipImage",
+  upload.single("file"),
+  BillingController.uploadSlipImage,
+);
+
 module.exports = Route;
