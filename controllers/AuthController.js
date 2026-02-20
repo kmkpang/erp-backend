@@ -80,10 +80,23 @@ class AuthController {
           );
         }
 
-        // const isMatch = await bcrypt.compare(userPassword, storedPassword);
+        // Check if stored password is a bcrypt hash
+        const isHashed = storedPassword && storedPassword.length === 60 && /^\$2[aby]\$/.test(storedPassword);
+        let isMatch = false;
 
-        // if (isMatch) {
-        if (userPassword === storedPassword) {
+        if (isHashed) {
+          isMatch = await bcrypt.compare(userPassword, storedPassword);
+        } else {
+          isMatch = (userPassword === storedPassword);
+          
+          // Auto-upgrade plaintext to hash upon successful login
+          if (isMatch) {
+            const newHash = await bcrypt.hash(userPassword, 10);
+            await User.update({ userPassword: newHash }, { where: { userID: user.userID } });
+          }
+        }
+
+        if (isMatch) {
           let token = user.accessToken;
 
           // หากไม่มี Token เดิมในฐานข้อมูล ให้สร้างใหม่
@@ -319,7 +332,7 @@ class AuthController {
         order: [["TokenCreate", "ASC"]],
       });
 
-      const hashedPassword = req.body.userPassword;
+      const hashedPassword = await bcrypt.hash(req.body.userPassword, 10);
       const insert_cate = await User.create({
         user_title: "Mr.",
         userF_name: req.body.userF_name,
@@ -435,8 +448,7 @@ class AuthController {
 
       if (createdBusiness) {
         // Hash password ก่อนบันทึก
-        // const hashedPassword = await bcrypt.hash(req.body.userPassword, 10);
-        const hashedPassword = req.body.userPassword;
+        const hashedPassword = await bcrypt.hash(req.body.userPassword, 10);
         const timestamp = Date.now();
         const dateObject = new Date(timestamp);
         const thaiDateString =
@@ -538,17 +550,25 @@ class AuthController {
             "Email,UserName,LastName,Password already exists",
           );
         }
-        // const hashedPassword = await bcrypt.hash(req.body.userPassword, 10);
-        const hashedPassword = req.body.userPassword;
+        let updateData = {
+          userF_name: req.body.userF_name,
+          userL_name: req.body.userL_name,
+          userPhone: req.body.userPhone,
+          userEmail: req.body.userEmail,
+          RoleID: req.body.RoleID,
+        };
+
+        if (req.body.userPassword && req.body.userPassword.trim() !== "") {
+          const isAlreadyHashed = req.body.userPassword.length === 60 && /^\$2[aby]\$/.test(req.body.userPassword);
+          if (isAlreadyHashed) {
+            updateData.userPassword = req.body.userPassword;
+          } else {
+            updateData.userPassword = await bcrypt.hash(req.body.userPassword, 10);
+          }
+        }
+
         await User.update(
-          {
-            userF_name: req.body.userF_name,
-            userL_name: req.body.userL_name,
-            userPhone: req.body.userPhone,
-            userEmail: req.body.userEmail,
-            userPassword: hashedPassword,
-            RoleID: req.body.RoleID,
-          },
+          updateData,
           {
             where: {
               userID: req.params.id,
@@ -649,14 +669,19 @@ class AuthController {
         },
       });
 
-      if (editemp) {
-        const editpassword = await User.findAll({
-          where: {
-            userPassword: req.body.userPassword,
-          },
-        });
+      if (editemp && editemp.length > 0) {
+        const user = editemp[0];
+        
+        const isHashed = user.userPassword && user.userPassword.length === 60 && /^\$2[aby]\$/.test(user.userPassword);
+        let isMatch = false;
 
-        if (editpassword) {
+        if (isHashed) {
+          isMatch = await bcrypt.compare(req.body.userPassword, user.userPassword);
+        } else {
+          isMatch = (req.body.userPassword === user.userPassword);
+        }
+
+        if (isMatch) {
           return ResponseManager.SuccessResponse(
             req,
             res,
@@ -664,9 +689,10 @@ class AuthController {
             "Password already exists",
           );
         } else {
+          const hashedPassword = await bcrypt.hash(req.body.userPassword, 10);
           await User.update(
             {
-              userPassword: req.body.userPassword,
+              userPassword: hashedPassword,
             },
             {
               where: {
@@ -701,6 +727,46 @@ class AuthController {
       } else {
         return ResponseManager.ErrorResponse(req, res, 400, `Email not found`);
       }
+    } catch (err) {
+      return ResponseManager.CatchResponse(req, res, err.message);
+    }
+  }
+
+  static async ChangePassword(req, res) {
+    try {
+      const user = await User.findOne({
+        where: { userID: req.params.id },
+      });
+
+      if (!user) {
+        return ResponseManager.ErrorResponse(req, res, 404, "User not found");
+      }
+
+      const { oldPassword, newPassword } = req.body;
+      if (!oldPassword || !newPassword) {
+        return ResponseManager.ErrorResponse(req, res, 400, "oldPassword and newPassword are required");
+      }
+
+      const isHashed = user.userPassword && user.userPassword.length === 60 && /^\$2[aby]\$/.test(user.userPassword);
+      let isMatch = false;
+
+      if (isHashed) {
+        isMatch = await bcrypt.compare(oldPassword, user.userPassword);
+      } else {
+        isMatch = (oldPassword === user.userPassword);
+      }
+
+      if (!isMatch) {
+         return ResponseManager.ErrorResponse(req, res, 400, "รหัสผ่านเดิมไม่ถูกต้อง");
+      }
+
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+      await User.update(
+        { userPassword: hashedPassword },
+        { where: { userID: req.params.id } }
+      );
+
+      return ResponseManager.SuccessResponse(req, res, 200, "เปลี่ยนรหัสผ่านสำเร็จ");
     } catch (err) {
       return ResponseManager.CatchResponse(req, res, err.message);
     }

@@ -45,6 +45,11 @@ Route.get(
 Route.get(RouteName + "/GetUserByID/:id", AuthController.GetUserByID);
 Route.put(RouteName + "/forgetPassword", AuthController.forgetPassword);
 Route.post(RouteName + "/checkEmail", AuthController.checkEmail);
+Route.put(
+  RouteName + "/ChangePassword/:id",
+  verifyTokenWithbus_id,
+  AuthController.ChangePassword,
+);
 
 Route.get("/protected-route", verifyTokenWithRole("SUPERUSER"), (req, res) => {
   res.json({ message: "Access granted", user: req.user });

@@ -5,7 +5,7 @@ const { Business } = require("../model/quotationModel");
 
 class TokenManager {
   static getGenerateAccessToken(payload) {
-    return jwt.sign(payload, tokenData["secret_key"], {});
+    return jwt.sign(payload, tokenData["secret_key"], { expiresIn: "7d" });
   }
 
   static checkAuthentication(request) {
