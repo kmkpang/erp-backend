@@ -31,6 +31,7 @@ const migrateRoute = require("./routes/Migrate");
 const QuotationSale = require("./routes/quotation");
 const InvoiceRoute = require("./routes/invoice");
 const BillingRoute = require("./routes/billing");
+const DashboardRoute = require("./routes/dashboard");
 
 // Routes
 app.use(bodyParser.json());
@@ -43,6 +44,7 @@ app.use(migrateRoute);
 app.use(QuotationSale);
 app.use(InvoiceRoute);
 app.use(BillingRoute);
+app.use(DashboardRoute);
 
 const PORT = process.env.PORT || 5000;
 

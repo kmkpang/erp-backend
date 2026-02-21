@@ -490,23 +490,37 @@ LEFT JOIN products p ON qsd."productID" = p."productID"
         where: { billing_id: req.params.id },
       });
 
-      if (invoice_id) {
-        await TaxInvoice.update(
-          { tax_invoice_status: "Pending", deleted_at: null },
-          { where: { invoice_id } }
-        );
-
-        await Invoice.update(
-          { invoice_status: "Pending" },
-          { where: { invoice_id } }
-        );
-      }
-
       if (sale_id) {
-        await Quotation_sale.update(
-          { status: "Allowed" },
-          { where: { sale_id } }
-        );
+        const quotation = await Quotation_sale.findOne({
+          where: { sale_id: sale_id }
+        });
+
+        if (quotation && quotation.remarkInfernal && quotation.remarkInfernal.startsWith("Auto-generated")) {
+          // If it was auto-generated for this billing/invoice, clean up the whole chain
+          if (invoice_id) {
+            await TaxInvoice.destroy({ where: { invoice_id } });
+            await Invoice.destroy({ where: { invoice_id } });
+          }
+          await Quotation_sale_detail.destroy({ where: { sale_id } });
+          await Quotation_sale.destroy({ where: { sale_id } });
+        } else {
+          // If it's a real quotation, just revert statuses
+          if (invoice_id) {
+            await TaxInvoice.update(
+              { tax_invoice_status: "Pending", deleted_at: null },
+              { where: { invoice_id } }
+            );
+
+            await Invoice.update(
+              { invoice_status: "Pending" },
+              { where: { invoice_id } }
+            );
+          }
+          await Quotation_sale.update(
+            { status: "Allowed" },
+            { where: { sale_id } }
+          );
+        }
       }
 
       return ResponseManager.SuccessResponse(req, res, 200, "Billing Deleted");

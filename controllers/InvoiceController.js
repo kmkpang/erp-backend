@@ -1037,17 +1037,32 @@ LEFT JOIN products p ON qsd."productID" = p."productID"
           },
         });
 
-        await Quotation_sale.update(
-          {
-            status: "Pending",
-            deleted_at: "",
-          },
-          {
-            where: {
-              sale_id: targetSaleId,
+        const quotation = await Quotation_sale.findOne({
+          where: { sale_id: targetSaleId }
+        });
+
+        if (quotation && quotation.remarkInfernal && quotation.remarkInfernal.startsWith("Auto-generated")) {
+          // If auto-generated, delete the quotation and its details entirely
+          await Quotation_sale_detail.destroy({
+            where: { sale_id: targetSaleId }
+          });
+          await Quotation_sale.destroy({
+            where: { sale_id: targetSaleId }
+          });
+        } else {
+          // If it's a real quotation, just revert its status back to Pending
+          await Quotation_sale.update(
+            {
+              status: "Pending",
+              deleted_at: "",
             },
-          },
-        );
+            {
+              where: {
+                sale_id: targetSaleId,
+              },
+            },
+          );
+        }
         return ResponseManager.SuccessResponse(
           req,
           res,
