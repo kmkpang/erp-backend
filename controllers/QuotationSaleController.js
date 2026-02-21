@@ -592,6 +592,33 @@ class QuotationSaleController {
           const products = req.body.products;
           for (let i = 0; i < products.length; i++) {
             products[i].sale_id = insert_Quo.sale_id;
+            let pId = products[i].productID ? parseInt(products[i].productID, 10) : null;
+            if (!pId) {
+                 const pname = products[i].productname || products[i].product_detail || "New Product";
+                 const existingProd = await Product.findOne({
+                   where: {
+                     productname: pname,
+                     bus_id: req.body.bus_id,
+                     Status: { [Op.notIn]: ["not active", "auto_generated"] }
+                   }
+                 });
+                 if (existingProd) {
+                   pId = existingProd.productID;
+                 } else {
+                   const newP = await Product.create({
+                       productname: pname,
+                       price: parseFloat(products[i].sale_price) || 0,
+                       bus_id: req.body.bus_id,
+                       Status: "auto_generated",
+                       productdetail: products[i].product_detail || "",
+                       amount: 0,
+                   });
+                   pId = newP.productID;
+                 }
+            }
+            products[i].productID = pId;
+            products[i].sale_discount = products[i].sale_discount || 0;
+            products[i].discounttype = products[i].discounttype || "percent";
           }
           console.log(insert_Quo.sale_id);
 
@@ -639,6 +666,33 @@ class QuotationSaleController {
             const products = req.body.products;
             for (let i = 0; i < products.length; i++) {
               products[i].sale_id = insert_Quo.sale_id;
+              let pId = products[i].productID ? parseInt(products[i].productID, 10) : null;
+              if (!pId) {
+                   const pname = products[i].productname || products[i].product_detail || "New Product";
+                   const existingProd = await Product.findOne({
+                     where: {
+                       productname: pname,
+                       bus_id: req.body.bus_id,
+                       Status: { [Op.notIn]: ["not active", "auto_generated"] }
+                     }
+                   });
+                   if (existingProd) {
+                     pId = existingProd.productID;
+                   } else {
+                     const newP = await Product.create({
+                         productname: pname,
+                         price: parseFloat(products[i].sale_price) || 0,
+                         bus_id: req.body.bus_id,
+                         Status: "auto_generated",
+                         productdetail: products[i].product_detail || "",
+                         amount: 0,
+                     });
+                     pId = newP.productID;
+                   }
+              }
+              products[i].productID = pId;
+              products[i].sale_discount = products[i].sale_discount || 0;
+              products[i].discounttype = products[i].discounttype || "percent";
             }
             console.log(insert_Quo.sale_id);
 
@@ -722,6 +776,33 @@ class QuotationSaleController {
       const products = req.body.products;
       for (let i = 0; i < products.length; i++) {
         products[i].sale_id = insert_Quo.sale_id;
+        let pId = products[i].productID ? parseInt(products[i].productID, 10) : null;
+        if (!pId) {
+             const pname = products[i].productname || products[i].product_detail || "New Product";
+             const existingProd = await Product.findOne({
+               where: {
+                 productname: pname,
+                 bus_id: bus_id,
+                 Status: { [Op.notIn]: ["not active", "auto_generated"] }
+               }
+             });
+             if (existingProd) {
+               pId = existingProd.productID;
+             } else {
+               const newP = await Product.create({
+                   productname: pname,
+                   price: parseFloat(products[i].sale_price) || 0,
+                   bus_id: bus_id,
+                   Status: "auto_generated",
+                   productdetail: products[i].product_detail || "",
+                   amount: 0,
+               });
+               pId = newP.productID;
+             }
+        }
+        products[i].productID = pId;
+        products[i].sale_discount = products[i].sale_discount || 0;
+        products[i].discounttype = products[i].discounttype || "percent";
       }
       console.log(insert_Quo.sale_id);
       await Quotation_sale_detail.bulkCreate(products);
@@ -869,6 +950,33 @@ class QuotationSaleController {
 
       for (let i = 0; i < products.length; i++) {
         products[i].sale_id = req.params.id; // ใช้ sale_id ที่ส่งเข้ามา
+        let pId = products[i].productID ? parseInt(products[i].productID, 10) : null;
+        if (!pId) {
+             const pname = products[i].productname || products[i].product_detail || "New Product";
+             const existingProd = await Product.findOne({
+               where: {
+                 productname: pname,
+                 bus_id: bus_id,
+                 Status: { [Op.notIn]: ["not active", "auto_generated"] }
+               }
+             });
+             if (existingProd) {
+               pId = existingProd.productID;
+             } else {
+               const newP = await Product.create({
+                   productname: pname,
+                   price: parseFloat(products[i].sale_price) || 0,
+                   bus_id: bus_id,
+                   Status: "auto_generated",
+                   productdetail: products[i].product_detail || "",
+                   amount: 0,
+               });
+               pId = newP.productID;
+             }
+        }
+        products[i].productID = pId;
+        products[i].sale_discount = products[i].sale_discount || 0;
+        products[i].discounttype = products[i].discounttype || "percent";
         await Quotation_sale_detail.create(products[i]);
       }
 

@@ -39,7 +39,7 @@ class ProductController {
         include: [productCategory, productType],
         where: {
           bus_id: bus_id,
-          Status: { [Op.ne]: "not active" },
+          Status: { [Op.notIn]: ["not active", "auto_generated"] },
         },
       });
 
@@ -95,6 +95,7 @@ class ProductController {
         where: {
           productTypeID: req.params.id,
           bus_id: bus_id,
+          Status: { [Op.ne]: "auto_generated" },
         },
       });
       return ResponseManager.SuccessResponse(
@@ -131,6 +132,7 @@ class ProductController {
         where: {
           productname: req.body.productname.trim(),
           bus_id: bus_id,
+          Status: { [Op.notIn]: ["not active", "auto_generated"] },
         },
       });
 

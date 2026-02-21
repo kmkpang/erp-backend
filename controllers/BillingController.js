@@ -23,7 +23,7 @@ const { Op } = require("sequelize");
 const TokenManager = require("../middleware/tokenManager");
 
 const sequelize = require("../database");
-const { Expense } = require("../model/productModel");
+const { Expense, Product } = require("../model/productModel");
 
 class BillingController {
   static async createBilling(req, res) {
@@ -109,11 +109,38 @@ class BillingController {
 
         // Create Details
         const products = req.body.products || [];
-        const details = products.map((p) => ({
-          ...p,
-          sale_id: targetSaleId,
-          sale_discount: p.sale_discount || 0,
-          discounttype: p.discounttype || "percent",
+        const details = await Promise.all(products.map(async (p) => {
+          let pId = p.productID ? parseInt(p.productID, 10) : null;
+          if (!pId) {
+             const pname = p.productname || p.product_detail || "New Product";
+             const existingProd = await Product.findOne({
+               where: {
+                 productname: pname,
+                 bus_id: bus_id,
+                 Status: { [Op.notIn]: ["not active", "auto_generated"] }
+               }
+             });
+             if (existingProd) {
+               pId = existingProd.productID;
+             } else {
+               const newP = await Product.create({
+                   productname: pname,
+                   price: parseFloat(p.sale_price) || 0,
+                   bus_id: bus_id,
+                   Status: "auto_generated",
+                   productdetail: p.product_detail || "",
+                   amount: 0,
+               }, { transaction });
+               pId = newP.productID;
+             }
+          }
+          return {
+            ...p,
+            productID: pId,
+            sale_id: targetSaleId,
+            sale_discount: p.sale_discount || 0,
+            discounttype: p.discounttype || "percent",
+          };
         }));
         await Quotation_sale_detail.bulkCreate(details, { transaction });
       }
@@ -608,11 +635,38 @@ LEFT JOIN products p ON qsd."productID" = p."productID"
       );
 
       // STEP 2: Create Quotation Details
-      const products = req.body.products.map(p => ({
-        ...p,
-        sale_id: insertQuotation.sale_id,
-        sale_discount: p.sale_discount || 0,
-        discounttype: p.discounttype || "percent",
+      const products = await Promise.all(req.body.products.map(async p => {
+        let pId = p.productID ? parseInt(p.productID, 10) : null;
+        if (!pId) {
+             const pname = p.productname || p.product_detail || "New Product";
+             const existingProd = await Product.findOne({
+               where: {
+                 productname: pname,
+                 bus_id: bus_id,
+                 Status: { [Op.notIn]: ["not active", "auto_generated"] }
+               }
+             });
+             if (existingProd) {
+               pId = existingProd.productID;
+             } else {
+               const newP = await Product.create({
+                   productname: pname,
+                   price: parseFloat(p.sale_price) || 0,
+                   bus_id: bus_id,
+                   Status: "auto_generated",
+                   productdetail: p.product_detail || "",
+                   amount: 0,
+               }, { transaction });
+               pId = newP.productID;
+             }
+        }
+        return {
+          ...p,
+          productID: pId,
+          sale_id: insertQuotation.sale_id,
+          sale_discount: p.sale_discount || 0,
+          discounttype: p.discounttype || "percent",
+        };
       }));
       await Quotation_sale_detail.bulkCreate(products, { transaction });
 

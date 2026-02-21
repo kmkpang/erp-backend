@@ -197,7 +197,7 @@ const Quotation_sale_detail = sequelize.define(
     },
     productID: {
       type: DataTypes.INTEGER,
-      allowNull: false,
+      allowNull: true,
     },
     sale_price: {
       type: DataTypes.DOUBLE,

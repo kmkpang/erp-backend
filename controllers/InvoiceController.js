@@ -23,7 +23,7 @@ const { Op } = require("sequelize");
 const TokenManager = require("../middleware/tokenManager");
 
 const sequelize = require("../database");
-const { Expense } = require("../model/productModel");
+const { Expense, Product } = require("../model/productModel");
 
 class InvoiceController {
   static async createInvoice(req, res) {
@@ -200,9 +200,38 @@ class InvoiceController {
 
         // Create Details
         const products = req.body.products || [];
-        const details = products.map((p) => ({
-          ...p,
-          sale_id: newQuotation.sale_id,
+        const details = await Promise.all(products.map(async (p) => {
+          let pId = p.productID ? parseInt(p.productID, 10) : null;
+          if (!pId) {
+             const pname = p.productname || p.product_detail || "New Product";
+             const existingProd = await Product.findOne({
+               where: {
+                 productname: pname,
+                 bus_id: bus_id,
+                 Status: { [Op.notIn]: ["not active", "auto_generated"] }
+               }
+             });
+             if (existingProd) {
+               pId = existingProd.productID;
+             } else {
+               const newP = await Product.create({
+                   productname: pname,
+                   price: parseFloat(p.sale_price) || 0,
+                   bus_id: bus_id,
+                   Status: "auto_generated",
+                   productdetail: p.product_detail || "",
+                   amount: 0,
+               }, { transaction });
+               pId = newP.productID;
+             }
+          }
+          return {
+            ...p,
+            productID: pId,
+            sale_id: newQuotation.sale_id,
+            sale_discount: p.sale_discount || 0,
+            discounttype: p.discounttype || "percent",
+          };
         }));
         await Quotation_sale_detail.bulkCreate(details, { transaction });
 
@@ -818,9 +847,38 @@ LEFT JOIN products p ON qsd."productID" = p."productID"
             },
           });
 
-          const newDetails = req.body.products.map((p) => ({
-            ...p,
-            sale_id: invoice.sale_id,
+          const newDetails = await Promise.all(req.body.products.map(async (p) => {
+            let pId = p.productID ? parseInt(p.productID, 10) : null;
+            if (!pId) {
+               const pname = p.productname || p.product_detail || "New Product";
+               const existingProd = await Product.findOne({
+                 where: {
+                   productname: pname,
+                   bus_id: bus_id,
+                   Status: { [Op.notIn]: ["not active", "auto_generated"] }
+                 }
+               });
+               if (existingProd) {
+                 pId = existingProd.productID;
+               } else {
+                 const newP = await Product.create({
+                     productname: pname,
+                     price: parseFloat(p.sale_price) || 0,
+                     bus_id: bus_id,
+                     Status: "auto_generated",
+                     productdetail: p.product_detail || "",
+                     amount: 0,
+                 });
+                 pId = newP.productID;
+               }
+            }
+            return {
+              ...p,
+              productID: pId,
+              sale_id: invoice.sale_id,
+              sale_discount: p.sale_discount || 0,
+              discounttype: p.discounttype || "percent",
+            };
           }));
 
           await Quotation_sale_detail.bulkCreate(newDetails);
@@ -955,25 +1013,27 @@ LEFT JOIN products p ON qsd."productID" = p."productID"
   // }
   static async deleteInvoice(req, res) {
     try {
-      const deleteqto = await Invoice.findOne({
+      const invoice = await Invoice.findOne({
         where: {
-          sale_id: req.params.id,
+          invoice_id: req.params.id,
         },
       });
-      if (deleteqto) {
+      if (invoice) {
+        const targetSaleId = invoice.sale_id;
+        
         await Invoice.destroy({
           where: {
-            sale_id: req.params.id,
+            invoice_id: req.params.id,
           },
         });
         await TaxInvoice.destroy({
           where: {
-            sale_id: req.params.id,
+            sale_id: targetSaleId,
           },
         });
         await Billing.destroy({
           where: {
-            sale_id: req.params.id,
+            invoice_id: req.params.id,
           },
         });
 
@@ -984,7 +1044,7 @@ LEFT JOIN products p ON qsd."productID" = p."productID"
           },
           {
             where: {
-              sale_id: req.params.id,
+              sale_id: targetSaleId,
             },
           },
         );
