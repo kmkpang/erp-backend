@@ -40,6 +40,10 @@ const Business = sequelize.define(
     bank_id: {
       type: DataTypes.INTEGER,
     },
+    bus_email: {
+      type: DataTypes.STRING(100),
+      allowNull: true,
+    },
   },
   {
     timestamps: false,

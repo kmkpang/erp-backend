@@ -440,6 +440,7 @@ class AuthController {
           bus_website: req.body.bus_website || "",
           bus_tel: req.body.bus_tel,
           bus_tax: req.body.bus_tax,
+          bus_email: req.body.bus_email,
           bus_logo: result.secure_url,
           bank_id: createbank.bank_id,
         });
