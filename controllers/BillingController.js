@@ -93,7 +93,7 @@ class BillingController {
             credit_date_number: "0",
             credit_expired_date: req.body.billing_date,
             bus_id: bus_id,
-            cus_id: req.body.cus_id,
+            cus_id: req.body.cus_id || null,
             employeeID: req.body.employeeID,
             sale_totalprice: req.body.sale_totalprice || req.body.total_grand, // Adapt to payload
             status: "Billed", // Created and immediately billed
@@ -584,22 +584,24 @@ LEFT JOIN products p ON qsd."productID" = p."productID"
 
       const { bus_id } = req.userData;
 
-      // Validate customer exists
-      const existCustomer = await Customer.findOne({
-        where: {
-          cus_id: req.body.cus_id,
-          bus_id: bus_id,
-        },
-      });
+      // Validate customer exists (only if provided)
+      if (req.body.cus_id) {
+        const existCustomer = await Customer.findOne({
+          where: {
+            cus_id: req.body.cus_id,
+            bus_id: bus_id,
+          },
+        });
 
-      if (!existCustomer) {
-        await transaction.rollback();
-        return ResponseManager.ErrorResponse(
-          req,
-          res,
-          400,
-          "No Customer found",
-        );
+        if (!existCustomer) {
+          await transaction.rollback();
+          return ResponseManager.ErrorResponse(
+            req,
+            res,
+            400,
+            "No Customer found",
+          );
+        }
       }
 
       // Validate billing number doesn't exist for THIS business

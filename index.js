@@ -16,6 +16,7 @@ sequelize.sync().then(async () => {
       ALTER TABLE customers ALTER COLUMN cus_tel DROP NOT NULL;
       ALTER TABLE customers ALTER COLUMN cus_email DROP NOT NULL;
       ALTER TABLE customers ALTER COLUMN cus_purchase DROP NOT NULL;
+      ALTER TABLE quotation_sales ALTER COLUMN cus_id DROP NOT NULL;
       SELECT setval('company_people_company_person_id_seq', (SELECT MAX(company_person_id) FROM company_people));
     `);
     console.log("Database columns check/update completed.");

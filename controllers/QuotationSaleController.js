@@ -741,20 +741,22 @@ class QuotationSaleController {
         );
       }
 
-      const existCustomer = await Customer.findOne({
-        where: {
-          cus_id: req.body.cus_id,
-          bus_id: bus_id,
-        },
-      });
+      if (req.body.cus_id) {
+        const existCustomer = await Customer.findOne({
+          where: {
+            cus_id: req.body.cus_id,
+            bus_id: bus_id,
+          },
+        });
 
-      if (!existCustomer) {
-        return ResponseManager.ErrorResponse(
-          req,
-          res,
-          400,
-          "No Customer found",
-        );
+        if (!existCustomer) {
+          return ResponseManager.ErrorResponse(
+            req,
+            res,
+            400,
+            "No Customer found",
+          );
+        }
       }
 
       const insert_Quo = await Quotation_sale.create({
