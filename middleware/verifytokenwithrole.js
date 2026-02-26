@@ -128,9 +128,6 @@ const logUserActivity = (activityType, routeName) => {
 };
 
 const verifyTokenWithbus_id = async (req, res, next) => {
-  User.belongsTo(Business, { foreignKey: "bus_id" });
-  Business.hasMany(User, { foreignKey: "bus_id" });
-
   try {
     if (!req.headers.authorization) {
       return res
@@ -149,12 +146,6 @@ const verifyTokenWithbus_id = async (req, res, next) => {
 
       try {
         const user = await User.findOne({
-          include: [
-            {
-              model: Business,
-              attributes: ["bus_id", "bus_name"],
-            },
-          ],
           where: {
             userID: userIDFromToken,
             accessToken: token,
@@ -170,7 +161,7 @@ const verifyTokenWithbus_id = async (req, res, next) => {
         req.userData = {
           ...req.userData,
           userId: user.userID,
-          bus_id: user.business.bus_id,
+          bus_id: user.bus_id,
         };
 
         next();
