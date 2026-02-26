@@ -147,21 +147,22 @@ class QuotationSaleController {
       //   );
       // }
 
-      const addCustomerTax = await Customer.findOne({
-        where: {
-          cus_tax: req.body.cus_tax,
-          bus_id: bus_id,
-          Status: "active",
-        },
-      });
-      if (addCustomerTax) {
-        return ResponseManager.SuccessResponse(
-          req,
-          res,
-          400,
-          "Customer tax already exists",
-        );
-      }
+      // // Commented out to allow the same Tax ID for multiple branches
+      // const addCustomerTax = await Customer.findOne({
+      //   where: {
+      //     cus_tax: req.body.cus_tax,
+      //     bus_id: bus_id,
+      //     Status: "active",
+      //   },
+      // });
+      // if (addCustomerTax) {
+      //   return ResponseManager.SuccessResponse(
+      //     req,
+      //     res,
+      //     400,
+      //     "Customer tax already exists",
+      //   );
+      // }
       const insert_cate = await Customer.create({
         cus_name: req.body.cus_name,
         cus_address: req.body.cus_address,
@@ -294,21 +295,22 @@ class QuotationSaleController {
         //   );
         // }
 
-        const addCustomerTax = await Customer.findOne({
-          where: {
-            cus_tax: req.body.cus_tax,
-
-            cus_id: { [Op.ne]: req.params.id },
-          },
-        });
-        if (addCustomerTax) {
-          return ResponseManager.SuccessResponse(
-            req,
-            res,
-            400,
-            "Customer tax already exists",
-          );
-        }
+        // // Commented out to allow the same Tax ID for multiple branches
+        // const addCustomerTax = await Customer.findOne({
+        //   where: {
+        //     cus_tax: req.body.cus_tax,
+        //
+        //     cus_id: { [Op.ne]: req.params.id },
+        //   },
+        // });
+        // if (addCustomerTax) {
+        //   return ResponseManager.SuccessResponse(
+        //     req,
+        //     res,
+        //     400,
+        //     "Customer tax already exists",
+        //   );
+        // }
 
         await Customer.update(
           {
