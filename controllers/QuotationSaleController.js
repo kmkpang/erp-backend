@@ -1045,7 +1045,7 @@ class QuotationSaleController {
             [Op.notLike]: "Auto-generated %"
           }
         },
-        order: [["sale_number", "ASC"]], // <-- เรียงจากน้อยไปมาก
+        order: [["sale_date", "DESC"]], // <-- เรียงจากมากไปน้อย (ใหม่สุดขึ้นก่อน)
       });
       const today = new Date();
       console.log("-----------------------------------------");

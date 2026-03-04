@@ -42,21 +42,26 @@ class InvoiceController {
 
       const { bus_id } = req.userData;
       let { sale_id } = req.body;
+      const deposit_type = req.body.deposit_type || "full"; // "full" or "deposit"
+      const deposit_amount = req.body.deposit_amount ? parseFloat(req.body.deposit_amount) : null;
 
       // Case 1: Create from Existing Quotation
       if (sale_id) {
-        const existingInvoice = await Invoice.findOne({
-          where: { sale_id: sale_id },
-        });
+        // If deposit_type is "full", check if a full invoice already exists
+        if (deposit_type === "full") {
+          const existingFullInvoice = await Invoice.findOne({
+            where: { sale_id: sale_id, deposit_type: "full" },
+          });
 
-        if (existingInvoice) {
-          await transaction.rollback();
-          return ResponseManager.ErrorResponse(
-            req,
-            res,
-            400,
-            "Invoice for this quotation already exists.",
-          );
+          if (existingFullInvoice) {
+            await transaction.rollback();
+            return ResponseManager.ErrorResponse(
+              req,
+              res,
+              400,
+              "ใบแจ้งหนี้ยอดเต็มสำหรับใบเสนอราคานี้มีอยู่แล้ว",
+            );
+          }
         }
 
         const quotation = await Quotation_sale.findOne({
@@ -125,11 +130,14 @@ class InvoiceController {
             invoice_status: "Pending",
             remark: req.body.remark || "",
             sale_id: sale_id,
+            deposit_type: deposit_type,
+            deposit_amount: deposit_type === "deposit" ? deposit_amount : null,
           },
           { transaction },
         );
 
-        // Update Quotation Status
+        // Update Quotation Status — if deposit, keep as "Invoiced" (partial)
+        const newStatus = deposit_type === "deposit" ? "Invoiced" : "Invoiced";
         await Quotation_sale.update(
           {
             status: "Invoiced", // Update to Invoiced as per requirement
@@ -155,28 +163,30 @@ class InvoiceController {
         // Need customer info, products, etc.
 
         // Generate Quotation Number (Hidden/Auto)
-        const lastQuotation = await Quotation_sale.findOne({
-          where: { bus_id },
-          order: [["sale_number", "DESC"]],
-        });
-
-        // ... (Simple Auto Gen for Quotation) ...
         const now = new Date();
         const yy = String(now.getFullYear()).slice(-2);
         const mm = String(now.getMonth() + 1).padStart(2, "0");
         const dd = String(now.getDate()).padStart(2, "0");
         const todayPrefix = `${yy}${mm}${dd}`;
 
-        let newQuotationNumber = `QT-${todayPrefix}0001`; // Fallback
+        const lastAutoQuotation = await Quotation_sale.findOne({
+          where: {
+            bus_id,
+            sale_number: { [Op.like]: `QT-AUTO-${todayPrefix}%` }
+          },
+          order: [["sale_number", "DESC"]],
+        });
+
+        let newQuotationNumber = `QT-AUTO-${todayPrefix}0001`; // Fallback
 
         if (
-          lastQuotation &&
-          lastQuotation.sale_number &&
-          lastQuotation.sale_number.startsWith(`QT-${todayPrefix}`)
+          lastAutoQuotation &&
+          lastAutoQuotation.sale_number &&
+          lastAutoQuotation.sale_number.startsWith(`QT-AUTO-${todayPrefix}`)
         ) {
-          const lastNumberPart = lastQuotation.sale_number.slice(9);
+          const lastNumberPart = lastAutoQuotation.sale_number.slice(14);
           const nextNumber = parseInt(lastNumberPart) + 1;
-          newQuotationNumber = `QT-${todayPrefix}${String(nextNumber).padStart(4, "0")}`;
+          newQuotationNumber = `QT-AUTO-${todayPrefix}${String(nextNumber).padStart(4, "0")}`;
         }
 
         const newQuotation = await Quotation_sale.create(
@@ -203,27 +213,27 @@ class InvoiceController {
         const details = await Promise.all(products.map(async (p) => {
           let pId = p.productID ? parseInt(p.productID, 10) : null;
           if (!pId) {
-             const pname = p.productname || p.product_detail || "New Product";
-             const existingProd = await Product.findOne({
-               where: {
-                 productname: pname,
-                 bus_id: bus_id,
-                 Status: { [Op.notIn]: ["not active", "auto_generated"] }
-               }
-             });
-             if (existingProd) {
-               pId = existingProd.productID;
-             } else {
-               const newP = await Product.create({
-                   productname: pname,
-                   price: parseFloat(p.sale_price) || 0,
-                   bus_id: bus_id,
-                   Status: "auto_generated",
-                   productdetail: p.product_detail || "",
-                   amount: 0,
-               }, { transaction });
-               pId = newP.productID;
-             }
+            const pname = p.productname || p.product_detail || "New Product";
+            const existingProd = await Product.findOne({
+              where: {
+                productname: pname,
+                bus_id: bus_id,
+                Status: { [Op.notIn]: ["not active", "auto_generated"] }
+              }
+            });
+            if (existingProd) {
+              pId = existingProd.productID;
+            } else {
+              const newP = await Product.create({
+                productname: pname,
+                price: parseFloat(p.sale_price) || 0,
+                bus_id: bus_id,
+                Status: "auto_generated",
+                productdetail: p.product_detail || "",
+                amount: 0,
+              }, { transaction });
+              pId = newP.productID;
+            }
           }
           return {
             ...p,
@@ -242,6 +252,8 @@ class InvoiceController {
             invoice_status: "Pending",
             remark: req.body.remark || "",
             sale_id: newQuotation.sale_id,
+            deposit_type: deposit_type,
+            deposit_amount: deposit_type === "deposit" ? deposit_amount : null,
           },
           { transaction },
         );
@@ -266,6 +278,62 @@ class InvoiceController {
     }
   }
 
+  // Get deposit summary for a quotation (total deposited, total paid, remaining balance)
+  static async getDepositSummary(req, res) {
+    try {
+      const tokenData = await TokenManager.update_token(req);
+      if (!tokenData) {
+        return ResponseManager.ErrorResponse(req, res, 401, "Unauthorized");
+      }
+
+      const { bus_id } = req.userData;
+      const { sale_id } = req.params;
+
+      // Verify quotation belongs to this business
+      const quotation = await Quotation_sale.findOne({
+        where: { sale_id, bus_id },
+      });
+
+      if (!quotation) {
+        return ResponseManager.ErrorResponse(req, res, 404, "Quotation not found");
+      }
+
+      const totalAmount = parseFloat(quotation.sale_totalprice) || 0;
+
+      // Sum all deposit invoices for this quotation
+      const depositInvoices = await Invoice.findAll({
+        where: { sale_id, deposit_type: "deposit", deleted_at: null },
+      });
+      const totalDepositInvoiced = depositInvoices.reduce(
+        (sum, inv) => sum + (parseFloat(inv.deposit_amount) || 0),
+        0
+      );
+
+      // Sum all deposit billings (receipts) for this quotation
+      const depositBillings = await Billing.findAll({
+        where: { sale_id, deposit_type: "deposit", deleted_at: null },
+      });
+      const totalDepositPaid = depositBillings.reduce(
+        (sum, b) => sum + (parseFloat(b.deposit_amount) || 0),
+        0
+      );
+
+      const remainingBalance = totalAmount - totalDepositPaid;
+
+      return ResponseManager.SuccessResponse(req, res, 200, {
+        sale_id: parseInt(sale_id),
+        total_amount: totalAmount,
+        total_deposit_invoiced: totalDepositInvoiced,
+        total_deposit_paid: totalDepositPaid,
+        remaining_balance: remainingBalance,
+        deposit_invoices: depositInvoices,
+        deposit_billings: depositBillings,
+      });
+    } catch (err) {
+      return ResponseManager.CatchResponse(req, res, err.message);
+    }
+  }
+
   static async getInvoice(req, res) {
     try {
       let result = [];
@@ -276,7 +344,9 @@ class InvoiceController {
         `
         select   *, 
   invoices.deleted_at AS invoice_deleted_at,
-  invoices.remark AS invoices_remark
+  invoices.remark AS invoices_remark,
+  invoices.deposit_type AS deposit_type,
+  invoices.deposit_amount AS deposit_amount
 from invoices
 Left join quotation_sales on quotation_sales.sale_id = invoices.sale_id
 Left join businesses on businesses.bus_id = quotation_sales.bus_id
@@ -285,7 +355,7 @@ Left join customers on quotation_sales.cus_id = customers.cus_id
 left join employees on employees."employeeID"  = quotation_sales."employeeID" 
 Left join billings on billings.invoice_id = invoices.invoice_id 
 WHERE quotation_sales.bus_id = :bus_id AND invoices.invoice_number NOT LIKE '%IV-AUTO%'
-ORDER BY invoices.invoice_number ASC;
+ORDER BY invoices.invoice_date DESC;
       `,
         {
           type: sequelize.QueryTypes.SELECT,
@@ -304,7 +374,26 @@ LEFT JOIN products p ON qsd."productID" = p."productID"
         },
       );
 
+      // Sum deposit BILLINGS per sale_id — this reflects what was actually paid as deposit.
+      // We use billings (not invoices) because the deposit billing is always created with
+      // deposit_type='deposit', whereas old invoice records may have incorrect deposit_type.
+      const depositSums = await sequelize.query(
+        `SELECT b.sale_id, COALESCE(SUM(b.deposit_amount), 0) AS total_deposited
+         FROM billings b
+         INNER JOIN quotation_sales qs2 ON qs2.sale_id = b.sale_id
+         WHERE qs2.bus_id = :bus_id
+           AND b.deposit_type = 'deposit'
+           AND b.deleted_at IS NULL
+         GROUP BY b.sale_id`,
+        { type: sequelize.QueryTypes.SELECT, replacements: { bus_id } }
+      );
+      const depositSumMap = {};
+      depositSums.forEach(d => {
+        depositSumMap[d.sale_id] = parseFloat(d.total_deposited) || 0;
+      });
+
       log.forEach((sale) => {
+
         const saleData = {
           sale_id: sale.sale_id,
           quotation_num: sale.sale_number,
@@ -330,6 +419,9 @@ LEFT JOIN products p ON qsd."productID" = p."productID"
           vatType: sale.vatType,
           discount_quotation: sale.discount_quotation,
           deleted_at: sale.invoice_deleted_at,
+          deposit_type: sale.deposit_type,
+          deposit_amount: sale.deposit_amount,
+          total_deposited: depositSumMap[sale.sale_id] || 0,
           billing:
             sale.invoice_status !== "Issue a receipt"
               ? "Pending"
@@ -394,6 +486,8 @@ LEFT JOIN products p ON qsd."productID" = p."productID"
   tax_invoices.sale_id AS sale_id_alias,
   tax_invoices.invoice_id AS invoice_id_alias,
   tax_invoices.deleted_at AS tax_invoice_deleted_at,
+  invoices.deposit_type AS deposit_type,
+  invoices.deposit_amount AS deposit_amount,
   * 
 FROM tax_invoices
 Left join invoices on invoices.invoice_id = tax_invoices.invoice_id
@@ -850,27 +944,27 @@ LEFT JOIN products p ON qsd."productID" = p."productID"
           const newDetails = await Promise.all(req.body.products.map(async (p) => {
             let pId = p.productID ? parseInt(p.productID, 10) : null;
             if (!pId) {
-               const pname = p.productname || p.product_detail || "New Product";
-               const existingProd = await Product.findOne({
-                 where: {
-                   productname: pname,
-                   bus_id: bus_id,
-                   Status: { [Op.notIn]: ["not active", "auto_generated"] }
-                 }
-               });
-               if (existingProd) {
-                 pId = existingProd.productID;
-               } else {
-                 const newP = await Product.create({
-                     productname: pname,
-                     price: parseFloat(p.sale_price) || 0,
-                     bus_id: bus_id,
-                     Status: "auto_generated",
-                     productdetail: p.product_detail || "",
-                     amount: 0,
-                 });
-                 pId = newP.productID;
-               }
+              const pname = p.productname || p.product_detail || "New Product";
+              const existingProd = await Product.findOne({
+                where: {
+                  productname: pname,
+                  bus_id: bus_id,
+                  Status: { [Op.notIn]: ["not active", "auto_generated"] }
+                }
+              });
+              if (existingProd) {
+                pId = existingProd.productID;
+              } else {
+                const newP = await Product.create({
+                  productname: pname,
+                  price: parseFloat(p.sale_price) || 0,
+                  bus_id: bus_id,
+                  Status: "auto_generated",
+                  productdetail: p.product_detail || "",
+                  amount: 0,
+                });
+                pId = newP.productID;
+              }
             }
             return {
               ...p,
@@ -1020,7 +1114,7 @@ LEFT JOIN products p ON qsd."productID" = p."productID"
       });
       if (invoice) {
         const targetSaleId = invoice.sale_id;
-        
+
         await Invoice.destroy({
           where: {
             invoice_id: req.params.id,

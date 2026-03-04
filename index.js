@@ -47,6 +47,9 @@ app.use(InvoiceRoute);
 app.use(BillingRoute);
 app.use(DashboardRoute);
 
+// Health-check / keep-alive endpoint (used by cron-job.org to ping Render)
+app.get("/ping", (req, res) => res.status(200).json({ status: "ok", time: new Date().toISOString() }));
+
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => console.log(`server is running on port ${PORT}`));

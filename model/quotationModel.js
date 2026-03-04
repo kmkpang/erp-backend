@@ -261,6 +261,16 @@ const Invoice = sequelize.define(
       type: DataTypes.INTEGER,
       allowNull: false,
     },
+    deposit_amount: {
+      type: DataTypes.DOUBLE,
+      allowNull: true,
+      defaultValue: null,
+    },
+    deposit_type: {
+      type: DataTypes.STRING(20),
+      allowNull: true,
+      defaultValue: "full",
+    },
     deleted_at: {
       type: DataTypes.STRING(100),
       allowNull: true,
@@ -372,6 +382,16 @@ const Billing = sequelize.define(
     pay_image_url: {
       type: DataTypes.STRING(255),
       allowNull: true,
+    },
+    deposit_amount: {
+      type: DataTypes.DOUBLE,
+      allowNull: true,
+      defaultValue: null,
+    },
+    deposit_type: {
+      type: DataTypes.STRING(20),
+      allowNull: true,
+      defaultValue: "full",
     },
     deleted_at: {
       type: DataTypes.STRING(100),

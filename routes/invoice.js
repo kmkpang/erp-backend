@@ -47,4 +47,11 @@ Route.post(
   InvoiceController.createInvoice,
 );
 
+// Deposit Summary
+Route.get(
+  RouteName + "/getDepositSummary/:sale_id",
+  verifyTokenWithbus_id,
+  InvoiceController.getDepositSummary,
+);
+
 module.exports = Route;
