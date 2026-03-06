@@ -393,10 +393,10 @@ LEFT JOIN products p ON qsd."productID" = p."productID"
           pay_image_url: sale.pay_image_url,
           remark: sale.billings_remark,
           vatType: sale.vatType,
-          deleted_at: sale.billings_deleted_at,
           discount_quotation: sale.discount_quotation,
           deposit_type: sale.deposit_type,
           deposit_amount: sale.deposit_amount,
+          doc_title: sale.doc_title,
           total_deposited: depositSumMap[sale.sale_id] || 0,
           billing:
             sale.invoice_status !== "Issue a receipt"
