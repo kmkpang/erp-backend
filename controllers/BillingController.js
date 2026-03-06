@@ -474,6 +474,7 @@ LEFT JOIN products p ON qsd."productID" = p."productID"
         `
         UPDATE billings
         SET billing_date = :billing_date,
+            billing_number = :billing_number,
             payments = :payments,
             remark = :remark,
             pay_bank = :pay_bank,
@@ -491,6 +492,7 @@ LEFT JOIN products p ON qsd."productID" = p."productID"
         {
           replacements: {
             billing_date,
+            billing_number,
             payments: payments || req.body.payment_method || "",
             remark: remark || "",
             pay_bank: pay_bank || "",
@@ -509,9 +511,10 @@ LEFT JOIN products p ON qsd."productID" = p."productID"
       const billing = await Billing.findOne({ where: { billing_id: id } });
       if (billing && billing.sale_id) {
         const saleId = billing.sale_id;
+        const inputNetTotal = parseFloat(req.body.sale_totalprice || total_price || 0);
         const netTotal = vatType === "excluded-vat"
-          ? parseFloat(total_price || 0)
-          : parseFloat(grand_total || total_price || 0);
+          ? inputNetTotal
+          : parseFloat(req.body.grand_total || grand_total || inputNetTotal);
 
         await Quotation_sale.update(
           {
