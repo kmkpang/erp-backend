@@ -256,6 +256,7 @@ class BillingController {
           pay_image_url: req.body.pay_image_url || null,
           deposit_type: deposit_type,
           deposit_amount: deposit_type === "deposit" ? deposit_amount : null,
+          doc_title: req.body.doc_title || "ใบเสร็จรับเงิน/ใบกำกับภาษี",
         },
         { transaction },
       );
@@ -460,7 +461,15 @@ LEFT JOIN products p ON qsd."productID" = p."productID"
   static async editBilling(req, res) {
     try {
       const { bus_id } = req.userData;
+      const { id } = req.params;
+      const {
+        billing_date, payments, remark,
+        pay_bank, pay_number, pay_branch, pay_date, pay_image_url,
+        vatType, productForms, total_price, vat, grand_total,
+        billing_number,
+      } = req.body;
 
+      // 1. Update billing payment fields
       await sequelize.query(
         `
         UPDATE billings
@@ -471,7 +480,8 @@ LEFT JOIN products p ON qsd."productID" = p."productID"
             pay_number = :pay_number,
             pay_branch = :pay_branch,
             pay_date = :pay_date,
-            pay_image_url = COALESCE(:pay_image_url, pay_image_url)
+            pay_image_url = COALESCE(:pay_image_url, pay_image_url),
+            doc_title = :doc_title
         FROM invoices
         LEFT JOIN quotation_sales ON quotation_sales.sale_id = invoices.sale_id
         WHERE billings.billing_id = :id
@@ -480,25 +490,61 @@ LEFT JOIN products p ON qsd."productID" = p."productID"
       `,
         {
           replacements: {
-            billing_date: req.body.billing_date,
-            payments: req.body.payments,
-            remark: req.body.remark,
-            pay_bank: req.body.pay_bank || "",
-            pay_number: req.body.pay_number || "",
-            pay_branch: req.body.pay_branch || "",
-            pay_date: req.body.pay_date || "",
-            pay_image_url: req.body.pay_image_url || null,
-            id: req.params.id,
-            bus_id: req.userData.bus_id,
+            billing_date,
+            payments: payments || req.body.payment_method || "",
+            remark: remark || "",
+            pay_bank: pay_bank || "",
+            pay_number: pay_number || "",
+            pay_branch: pay_branch || "",
+            pay_date: pay_date || "",
+            pay_image_url: pay_image_url || null,
+            doc_title: req.body.doc_title || "ใบเสร็จรับเงิน/ใบกำกับภาษี",
+            id,
+            bus_id,
           },
         },
       );
+
+      // 2. Update vatType and totals on the quotation_sale
+      const billing = await Billing.findOne({ where: { billing_id: id } });
+      if (billing && billing.sale_id) {
+        const saleId = billing.sale_id;
+        const netTotal = vatType === "excluded-vat"
+          ? parseFloat(total_price || 0)
+          : parseFloat(grand_total || total_price || 0);
+
+        await Quotation_sale.update(
+          {
+            vatType: vatType || "non-vat",
+            sale_totalprice: netTotal,
+          },
+          { where: { sale_id: saleId } }
+        );
+
+        // 3. Update product details if provided
+        if (productForms && productForms.length > 0) {
+          // Delete existing details and re-insert
+          await Quotation_sale_detail.destroy({ where: { sale_id: saleId } });
+          const newDetails = productForms.map((p) => ({
+            sale_id: saleId,
+            productID: p.productID,
+            sale_price: parseFloat(p.sale_price) || 0,
+            discounttype: p.discounttype || "percent",
+            sale_discount: parseFloat(p.sale_discount) || 0,
+            sale_qty: parseFloat(p.sale_qty) || 1,
+            product_detail: p.product_detail || p.description || "",
+            pro_unti: String(p.pro_unti || p.price || ""),
+          }));
+          await Quotation_sale_detail.bulkCreate(newDetails);
+        }
+      }
 
       return ResponseManager.SuccessResponse(req, res, 200, "Receipt Saved");
     } catch (err) {
       return ResponseManager.CatchResponse(req, res, err.message);
     }
   }
+
 
   static async deleteBilling(req, res) {
     try {

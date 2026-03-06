@@ -397,6 +397,11 @@ const Billing = sequelize.define(
       type: DataTypes.STRING(100),
       allowNull: true,
     },
+    doc_title: {
+      type: DataTypes.STRING(100),
+      allowNull: true,
+      defaultValue: "ใบเสร็จรับเงิน/ใบกำกับภาษี",
+    },
   },
   {
     timestamps: false,
