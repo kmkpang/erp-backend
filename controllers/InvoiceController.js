@@ -48,22 +48,10 @@ class InvoiceController {
       // Case 1: Create from Existing Quotation
       if (sale_id) {
         // If deposit_type is "full", check if a full invoice already exists
-        if (deposit_type === "full") {
-          const existingFullInvoice = await Invoice.findOne({
-            where: { sale_id: sale_id, deposit_type: "full" },
-          });
-
-          if (existingFullInvoice) {
-            await transaction.rollback();
-            return ResponseManager.ErrorResponse(
-              req,
-              res,
-              400,
-              "ใบแจ้งหนี้ยอดเต็มสำหรับใบเสนอราคานี้มีอยู่แล้ว",
-            );
-          }
-        }
-
+        // Check if quotation is already fully invoiced
+        // We sum up all active invoices for this sale_id.
+        // If the sum of invoiced amounts (or if a single "full" invoice exists that covers the whole amount)
+        // is >= quotation total, we block it.
         const quotation = await Quotation_sale.findOne({
           where: { sale_id: sale_id, bus_id: bus_id },
         });
@@ -76,6 +64,48 @@ class InvoiceController {
             404,
             "Quotation not found or does not belong to this business.",
           );
+        }
+
+        const activeInvoices = await Invoice.findAll({
+          where: {
+            sale_id: sale_id,
+            invoice_status: { [Op.ne]: "Cancel" },
+          },
+        });
+
+        let totalInvoiced = 0;
+        let hasFullInvoice = false;
+        
+        activeInvoices.forEach((inv) => {
+          if (inv.deposit_type === "full" && !inv.invoice_number.startsWith("IV-AUTO-")) {
+            hasFullInvoice = true;
+          } else if (inv.deposit_type === "deposit") {
+            totalInvoiced += parseFloat(inv.deposit_amount || 0);
+          }
+        });
+
+        // If a 'full' invoice exists and we're trying to create another one, 
+        // OR if the total deposit already invoiced >= quotation total
+        const quotationTotal = parseFloat(quotation.sale_totalprice || 0);
+
+        if (deposit_type === "full" && hasFullInvoice) {
+            await transaction.rollback();
+            return ResponseManager.ErrorResponse(
+              req,
+              res,
+              400,
+              "ใบแจ้งหนี้ยอดเต็มสำหรับใบเสนอราคานี้มีอยู่แล้ว",
+            );
+        }
+
+        if (totalInvoiced >= quotationTotal && quotationTotal > 0) {
+           await transaction.rollback();
+           return ResponseManager.ErrorResponse(
+             req,
+             res,
+             400,
+             "ใบเสนอราคานี้ถูกออกใบแจ้งหนี้ครบตามยอดจำหน่ายแล้ว",
+           );
         }
 
         // Generate Invoice Number
