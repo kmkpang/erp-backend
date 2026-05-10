@@ -1047,23 +1047,8 @@ class QuotationSaleController {
         },
         order: [["sale_date", "DESC"]], // <-- เรียงจากมากไปน้อย (ใหม่สุดขึ้นก่อน)
       });
-      const today = new Date();
-      console.log("-----------------------------------------");
-      console.log(quotationslist);
-      // return false
 
       for (let log of quotationslist) {
-        const expiredDate = new Date(log.credit_expired_date);
-
-        if (today > expiredDate) {
-          log.status = "expired";
-
-          await Quotation_sale.update(
-            { status: "expired" },
-            { where: { sale_id: log.sale_id } },
-          );
-        }
-
         result.push({
           sale_id: log.sale_id,
           quotation_num: log.sale_number,
